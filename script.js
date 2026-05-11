@@ -48,15 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const status = getStatusBadge(upside);
 
             row.innerHTML = `
-                <td class="ticker-cell">${stock.ticker}</td>
-                <td>${formatCurrency(stock.price)}</td>
-                <td>${formatCurrency(stock.valuation_graham)}</td>
-                <td>${formatCurrency(stock.valuation_dcf)}</td>
-                <td class="${upsideClass}">${upside.toFixed(2)}% ${upsideIcon}</td>
-                <td>${formatNumber(stock.p_e)}</td>
-                <td>${formatNumber(stock.p_b)}</td>
-                <td>${formatNumber(stock.dividend_yield)}%</td>
-                <td><span class="status-badge ${status.class}">${status.label}</span></td>
+                <td class="ticker-cell col-ticker">${stock.ticker}</td>
+                <td class="col-price">${formatCurrency(stock.price)}</td>
+                <td class="col-graham">${formatCurrency(stock.valuation_graham)}</td>
+                <td class="col-dcf">${formatCurrency(stock.valuation_dcf)}</td>
+                <td class="${upsideClass} col-upside">${upside.toFixed(2)}% ${upsideIcon}</td>
+                <td class="col-pl">${formatNumber(stock.p_e)}</td>
+                <td class="col-pvp">${formatNumber(stock.p_b)}</td>
+                <td class="col-yield">${formatNumber(stock.dividend_yield)}%</td>
+                <td class="col-status"><span class="status-badge ${status.class}">${status.label}</span></td>
             `;
             tableBody.appendChild(row);
         });
