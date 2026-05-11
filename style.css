@@ -227,7 +227,7 @@ table {
 }
 
 th {
-    padding: 1.2rem 1.5rem;
+    padding: 1.2rem 1rem;
     color: var(--text-secondary);
     font-weight: 600;
     font-size: 0.85rem;
@@ -238,9 +238,10 @@ th {
 }
 
 td {
-    padding: 1.2rem 1.5rem;
+    padding: 1.2rem 1rem;
     border-bottom: 1px solid #f1f5f9;
     white-space: nowrap;
+    text-align: left;
 }
 
 table {
