@@ -164,7 +164,15 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
     border-bottom: 1px solid var(--glass-border);
+}
+
+.table-header h2 {
+    font-size: 1.5rem;
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .search-box {
@@ -213,6 +221,7 @@ th {
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 td {
