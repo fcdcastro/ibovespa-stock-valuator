@@ -51,8 +51,8 @@ nav {
 }
 
 .nav-content {
-    max-width: 1400px;
-    width: 95%;
+    max-width: 100%;
+    width: 98%;
     margin: 0 auto;
     height: 100%;
     display: flex;
@@ -83,8 +83,8 @@ nav {
 .hero {
     text-align: center;
     padding: 1rem 1rem 1rem;
-    max-width: 1400px;
-    width: 95%;
+    max-width: 100%;
+    width: 98%;
     margin: 0 auto;
 }
 
@@ -111,8 +111,8 @@ nav {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.75rem;
-    max-width: 1400px;
-    width: 95%;
+    max-width: 100%;
+    width: 98%;
     margin: 0 auto 1.5rem;
     padding: 0 1rem;
 }
@@ -152,8 +152,8 @@ nav {
 
 /* Table Section */
 .table-container {
-    max-width: 1400px;
-    width: 95%;
+    max-width: 100%;
+    width: 98%;
     margin: 0 auto 5rem;
     background: white;
     border: 1px solid var(--glass-border);
