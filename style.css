@@ -18,13 +18,25 @@
     box-sizing: border-box;
 }
 
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: auto;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-primary);
     line-height: 1.6;
-    overflow-x: auto;
     min-height: 100vh;
+}
+
+main {
+    width: 100%;
+    padding: 0;
+    margin: 0;
 }
 
 /* Background Glow Effects */
@@ -110,7 +122,7 @@ nav {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.75rem;
     width: 100%;
-    margin: 0 0 1.5rem;
+    margin: 0 0 1.5rem 0;
     padding: 0 20px;
 }
 
