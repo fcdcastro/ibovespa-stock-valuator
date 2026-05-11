@@ -76,5 +76,13 @@ if __name__ == "__main__":
             df_results.to_csv(output_file, index=False)
             print(f"\nResults saved to {output_file}")
             
+            # Save to JSON for GitHub Pages
+            json_file = "data.json"
+            # Replace NaN/Inf with None for JSON
+            df_json = df_results.replace([float('inf'), float('-inf')], None)
+            df_json = df_json.where(df_json.notnull(), None)
+            df_json.to_json(json_file, orient='records', indent=2)
+            print(f"Results saved to {json_file}")
+            
     except Exception as e:
         print(f"An error occurred: {e}")

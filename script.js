@@ -14,7 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         loadingOverlay.classList.remove('hidden');
         try {
-            const response = await fetch('http://localhost:5000/api/valuation');
+            // Try local API first (for development)
+            let response;
+            try {
+                response = await fetch('http://localhost:5000/api/valuation');
+            } catch (e) {
+                // If local API fails, fetch the static data.json (for GitHub Pages)
+                response = await fetch('data.json');
+            }
+
             if (!response.ok) throw new Error('Falha ao buscar dados');
             
             stockData = await response.json();
