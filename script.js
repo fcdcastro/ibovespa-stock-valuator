@@ -49,9 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             row.innerHTML = `
                 <td class="ticker-cell">${stock.ticker}</td>
-                <td>R$ ${formatNumber(stock.price)}</td>
-                <td>R$ ${formatNumber(stock.valuation_graham)}</td>
-                <td>R$ ${formatNumber(stock.valuation_dcf)}</td>
+                <td>${formatCurrency(stock.price)}</td>
+                <td>${formatCurrency(stock.valuation_graham)}</td>
+                <td>${formatCurrency(stock.valuation_dcf)}</td>
                 <td class="${upsideClass}">${upside.toFixed(2)}% ${upsideIcon}</td>
                 <td>${formatNumber(stock.p_e)}</td>
                 <td>${formatNumber(stock.p_b)}</td>
@@ -85,6 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (num === null || num === undefined || isNaN(num)) return '-';
         if (num === Infinity) return '∞';
         return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatCurrency(num) {
+        if (num === null || num === undefined || isNaN(num) || num === 0) return '-';
+        return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     // Search functionality
