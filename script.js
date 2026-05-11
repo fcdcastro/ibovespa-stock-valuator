@@ -47,15 +47,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const status = getStatusBadge(upside);
 
+            // Ensure all values exist or are null
+            const price = stock.price || 0;
+            const graham = stock.valuation_graham || null;
+            const dcf = stock.valuation_dcf || null;
+            const pe = stock.p_e || null;
+            const pvp = stock.p_b || stock.p_vp || null; 
+            const dy = stock.dividend_yield || 0;
+
             row.innerHTML = `
-                <td class="ticker-cell col-ticker">${stock.ticker}</td>
-                <td class="col-price">${formatCurrency(stock.price)}</td>
-                <td class="col-graham">${formatCurrency(stock.valuation_graham)}</td>
-                <td class="col-dcf">${formatCurrency(stock.valuation_dcf)}</td>
-                <td class="${upsideClass} col-upside">${upside.toFixed(2)}% ${upsideIcon}</td>
-                <td class="col-pl">${formatNumber(stock.p_e)}</td>
-                <td class="col-pvp">${formatNumber(stock.p_b)}</td>
-                <td class="col-yield">${formatNumber(stock.dividend_yield)}%</td>
+                <td class="col-ticker ticker-cell">${stock.ticker || '-'}</td>
+                <td class="col-price">${formatCurrency(price)}</td>
+                <td class="col-graham">${formatCurrency(graham)}</td>
+                <td class="col-dcf">${formatCurrency(dcf)}</td>
+                <td class="col-upside ${upsideClass}">${upside.toFixed(2)}% ${upsideIcon}</td>
+                <td class="col-pl">${formatNumber(pe)}</td>
+                <td class="col-pvp">${formatNumber(pvp)}</td>
+                <td class="col-yield">${formatNumber(dy)}%</td>
                 <td class="col-status"><span class="status-badge ${status.class}">${status.label}</span></td>
             `;
             tableBody.appendChild(row);
