@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+valuation_results.csv
+*.log
+.system_generated/
+.tempmediaStorage/
+scratch/
+browser/

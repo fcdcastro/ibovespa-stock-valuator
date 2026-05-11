@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockValuator - Algoritmo de Valuation Ibovespa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="background-glow"></div>
+    
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="trending-up" class="logo-icon"></i>
+                <span>Stock<span>Valuator</span></span>
+            </div>
+            <button id="refresh-btn" class="primary-btn">
+                <i data-lucide="refresh-cw"></i>
+                Atualizar Dados
+            </button>
+        </div>
+    </nav>
+
+    <main>
+        <header class="hero">
+            <h1>Análise Fundamentalista <span>Automatizada</span></h1>
+            <p>Algoritmo inteligente de valuation para ações da B3. Graham, Bazin e Magic Formula em tempo real.</p>
+        </header>
+
+        <section class="stats-grid" id="summary-stats">
+            <div class="stat-card">
+                <span class="stat-label">Ações Analisadas</span>
+                <span class="stat-value" id="total-stocks">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Melhor Oportunidade</span>
+                <span class="stat-value highlight" id="best-ticker">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Média de Upside</span>
+                <span class="stat-value" id="avg-upside">-</span>
+            </div>
+        </section>
+
+        <section class="table-container glass">
+            <div class="table-header">
+                <h2>Ranking de Valuation</h2>
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Buscar ticker...">
+                </div>
+            </div>
+            <div class="scrollable-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Preço Atual</th>
+                            <th>Graham</th>
+                            <th>DCF</th>
+                            <th>Upside</th>
+                            <th>P/L</th>
+                            <th>P/VP</th>
+                            <th>Div. Yield</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table-body">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="loading" class="loading-overlay hidden">
+                <div class="loader"></div>
+                <p>Executando Algoritmo...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
