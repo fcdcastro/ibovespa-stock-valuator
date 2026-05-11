@@ -160,7 +160,7 @@ nav {
 }
 
 .table-header {
-    padding: 1rem 2rem;
+    padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -216,12 +216,13 @@ th {
 }
 
 td {
-    padding: 0.8rem 2rem;
+    padding: 1rem 2rem;
     border-bottom: 1px solid #f1f5f9;
 }
 
 .ticker-cell {
     font-weight: 700;
+    font-size: 1.1rem;
     color: var(--accent-color);
 }
 
