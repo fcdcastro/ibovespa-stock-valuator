@@ -1,4 +1,4 @@
-# StockValuator - Ibovespa Stock Valuation Algorithm
+# AVALIAÇÃO SUPPLIERS - Ibovespa Stock Valuation Algorithm
 
 An automated fundamental analysis tool for Brazilian stocks (B3) using the Brapi API. This project implements multiple valuation models and provides a premium web dashboard for data visualization.
 
