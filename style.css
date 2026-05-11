@@ -359,6 +359,7 @@ table {
     align-items: center;
     gap: 0.3rem;
     cursor: help;
+    white-space: nowrap;
 }
 
 .info-icon {
