@@ -227,6 +227,7 @@ th {
 td {
     padding: 0.8rem 0.75rem;
     border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
 }
 
 table {
@@ -256,6 +257,8 @@ table {
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .status-buy { background: rgba(16, 185, 129, 0.1); color: var(--success); }
