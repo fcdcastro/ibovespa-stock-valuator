@@ -23,6 +23,8 @@ html, body {
     padding: 0;
     width: 100%;
     overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-padding-top: 60px;
 }
 
 body {
