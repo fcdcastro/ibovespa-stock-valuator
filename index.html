@@ -18,11 +18,18 @@
             <div class="logo">
                 <i data-lucide="trending-up" class="logo-icon"></i>
                 <span>Avaliação fundamentalista - <span>(Mid/Small Caps)</span></span>
+                <span id="last-updated" class="timestamp"></span>
             </div>
-            <button id="refresh-btn" class="primary-btn">
-                <i data-lucide="refresh-cw"></i>
-                Atualizar Dados
-            </button>
+            <div class="nav-actions">
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Buscar ticker...">
+                </div>
+                <button id="refresh-btn" class="primary-btn">
+                    <i data-lucide="refresh-cw"></i>
+                    Atualizar Dados
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -46,13 +53,7 @@
         </section>
 
         <section class="table-container glass">
-            <div class="table-header">
-                <h2>Ranking de Valuation <span id="last-updated" class="timestamp"></span></h2>
-                <div class="search-box">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="search-input" placeholder="Buscar ticker...">
-                </div>
-            </div>
+
             <div class="scrollable-table">
                 <table>
                     <thead>
