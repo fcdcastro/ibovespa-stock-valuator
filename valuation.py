@@ -93,6 +93,8 @@ class ValuationModels:
         
         # Upside Calculation (Average of Graham and DCF vs Price)
         fair_value = (metrics["valuation_graham"] + metrics["valuation_dcf"]) / 2
+        metrics["target_price"] = fair_value
+        
         if metrics["price"] > 0:
             metrics["upside"] = ((fair_value / metrics["price"]) - 1) * 100
         else:

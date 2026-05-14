@@ -257,14 +257,15 @@ th {
 }
 
 /* Col Widths */
-.col-ticker { width: 8%; }
-.col-price { width: 12%; }
-.col-graham { width: 13%; }
-.col-dcf { width: 13%; }
-.col-upside { width: 12%; }
-.col-pl { width: 8%; }
-.col-pvp { width: 8%; }
-.col-yield { width: 12%; }
+.col-ticker { width: 6%; }
+.col-price { width: 10%; }
+.col-target { width: 10%; }
+.col-graham { width: 12%; }
+.col-dcf { width: 12%; }
+.col-upside { width: 11%; }
+.col-pl { width: 7%; }
+.col-pvp { width: 7%; }
+.col-yield { width: 11%; }
 .col-status { width: 14%; }
 
 td {

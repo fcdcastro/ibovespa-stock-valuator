@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td class="col-ticker ticker-cell">${stock.ticker || '-'}</td>
                 <td class="col-price">${formatCurrency(price)}</td>
+                <td class="col-target">${formatCurrency(stock.target_price)}</td>
                 <td class="col-graham">${formatCurrency(graham)}</td>
                 <td class="col-dcf">${formatCurrency(dcf)}</td>
                 <td class="col-upside ${upsideClass}">${upside.toFixed(2)}% ${upsideIcon}</td>
