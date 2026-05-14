@@ -39,6 +39,20 @@ def run_valuation_pipeline(tickers):
         print("❌ Nenhum dado foi coletado.")
         return None
 
+    # Lista simplificada das principais componentes do Ibovespa para classificacao
+    ibov_components = [
+        "PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "ABEV3.SA", "B3SA3.SA", 
+        "WEGE3.SA", "SUZB3.SA", "RENT3.SA", "LREN3.SA", "JBSS3.SA", "RADL3.SA", "EQTL3.SA",
+        "ELET3.SA", "ELET6.SA", "HAPV3.SA", "PRIO3.SA", "RDOR3.SA", "RAIL3.SA", "SBSP3.SA",
+        "VIVT3.SA", "BBSE3.SA", "CPLE6.SA", "CMIG4.SA", "CCRO3.SA", "CSNA3.SA", "GGBR4.SA",
+        "USIM5.SA", "BRFS3.SA", "TOTS3.SA", "ASAI3.SA", "NTCO3.SA", "KLBN11.SA", "TIMS3.SA",
+        "BPAC11.SA", "CSAN3.SA", "MGLU3.SA", "EGIE3.SA", "CPFE3.SA", "CYRE3.SA", "MULT3.SA",
+        "VBBR3.SA", "CRFB3.SA", "ENGI11.SA", "TAEE11.SA", "TRPL4.SA", "ALOS3.SA", "IGTI11.SA"
+    ]
+
+    for res in results:
+        res['category'] = 'IBOVESPA' if res['ticker'] in ibov_components else 'SMALL_CAP'
+
     # Criar DataFrame
     df = pd.DataFrame(results)
     
@@ -63,9 +77,17 @@ def run_valuation_pipeline(tickers):
 
 if __name__ == "__main__":
     target_tickers = [
-        "CYRE3.SA", "EGIE3.SA", "HAPV3.SA", "IRBR3.SA", "LWSA3.SA",
-        "MGLU3.SA", "QUAL3.SA", "RADL3.SA", "SUZB3.SA", "VAMO3.SA",
-        "WEGE3.SA", "YDUQ3.SA", "BEES3.SA", "CSAN3.SA", "HAGA3.SA"
+        "PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "ABEV3.SA", "B3SA3.SA", "ITSA4.SA", "JBSS3.SA", "RENT3.SA",
+        "LREN3.SA", "WEGE3.SA", "SUZB3.SA", "GGBR4.SA", "CSNA3.SA", "USIM5.SA", "EMBR3.SA", "CPLE6.SA", "EQTL3.SA", "RADL3.SA",
+        "RAIL3.SA", "SBSP3.SA", "VIVT3.SA", "HYPE3.SA", "ELET3.SA", "ELET6.SA", "BRFS3.SA", "CCRO3.SA", "RDOR3.SA", "BPAC11.SA",
+        "KLBN11.SA", "SANB11.SA", "CRFB3.SA", "TOTS3.SA", "ASAI3.SA", "NTCO3.SA", "SLCE3.SA", "ENGI11.SA", "TRPL4.SA", "TAEE11.SA",
+        "GOAU4.SA", "MRVE3.SA", "CYRE3.SA", "MULT3.SA", "IGTI11.SA", "ALOS3.SA", "BRAP4.SA", "CMIG4.SA", "CPFE3.SA", "CSMG3.SA",
+        "EGIE3.SA", "PRIO3.SA", "VBBR3.SA", "RRRP3.SA", "RECV3.SA", "PSSA3.SA", "BBSE3.SA", "IRBR3.SA", "AZUL4.SA", "MOVI3.SA",
+        "STBP3.SA", "TIMS3.SA", "FLRY3.SA", "QUAL3.SA", "DXCO3.SA", "BEEF3.SA", "MRFG3.SA", "CAML3.SA", "SMTO3.SA", "JHSF3.SA",
+        "EZTC3.SA", "DIRR3.SA", "CURY3.SA", "TEND3.SA", "GFSA3.SA", "MYPK3.SA", "EVEN3.SA", "PCAR3.SA", "BHIA3.SA", "LJQQ3.SA",
+        "AMBP3.SA", "SIMH3.SA", "VAMO3.SA", "POSI3.SA", "KEPL3.SA", "UNIP6.SA", "RANI3.SA", "KLBN4.SA", "AESB3.SA", "ENAT3.SA",
+        "ROMI3.SA", "SHUL4.SA", "LEVE3.SA", "FRAS3.SA", "POMO4.SA", "RAPT4.SA", "TGMA3.SA", "WIZC3.SA", "PARD3.SA", "HAPV3.SA",
+        "LWSA3.SA", "YDUQ3.SA", "COGN3.SA", "BEES3.SA", "HAGA3.SA"
     ]
 
     try:

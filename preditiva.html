@@ -59,8 +59,14 @@
 
         <!-- Full Prediction Table -->
         <section class="table-container glass">
-            <div class="section-header" style="padding: 1rem 10px 0;">
+            <div class="section-header" style="padding: 1rem 10px 0; border-bottom: none;">
                 <h2><i data-lucide="table-2"></i> Ranking Completo - Retorno Esperado</h2>
+            </div>
+            <div class="filter-bar" style="padding: 0 10px 15px; border-bottom: 1px solid var(--glass-border); display: flex; gap: 10px; align-items: center;">
+                <span style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Filtro:</span>
+                <button class="nav-btn active filter-btn" data-filter="all">Todas</button>
+                <button class="nav-btn filter-btn" data-filter="IBOVESPA">Ibovespa</button>
+                <button class="nav-btn filter-btn" data-filter="SMALL_CAP">Small Caps</button>
             </div>
             <div class="scrollable-table">
                 <table>
@@ -116,61 +122,87 @@
                 document.getElementById('model-r2').textContent = modelInfo.r2.toFixed(4);
                 document.getElementById('model-mae').textContent = modelInfo.mae.toFixed(2) + '%';
             }
-            document.getElementById('pred-total').textContent = stocks.length;
+            let currentFilter = 'all';
 
-            // Sort by expected_return descending
-            const sorted = [...stocks]
-                .filter(s => s.expected_return !== undefined && s.expected_return !== null)
-                .sort((a, b) => b.expected_return - a.expected_return);
+            function applyFilters() {
+                let filtered = stocks;
+                
+                if (currentFilter !== 'all') {
+                    filtered = filtered.filter(stock => stock.category === currentFilter);
+                }
 
-            // Render Top 5 Cards
-            const container = document.getElementById('prediction-cards-container');
-            sorted.slice(0, 5).forEach((stock, i) => {
-                const isPositive = stock.expected_return >= 0;
-                const card = document.createElement('div');
-                card.className = 'prediction-card';
-                card.innerHTML = `
-                    <div class="rank">#${i + 1}</div>
-                    <div class="ticker">${stock.ticker}</div>
-                    <div class="prediction-label">Retorno Esperado (3m)</div>
-                    <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
-                        ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
-                    </div>
-                    <div class="card-footer">
-                        <span>ROE: ${(stock.roe || 0).toFixed(1)}%</span>
-                        <span>P/L: ${(stock.p_e || 0).toFixed(1)}</span>
-                    </div>
-                `;
-                container.appendChild(card);
+                // Sort by expected_return descending
+                const sorted = [...filtered]
+                    .filter(s => s.expected_return !== undefined && s.expected_return !== null)
+                    .sort((a, b) => b.expected_return - a.expected_return);
+
+                // Render Top 5 Cards
+                const container = document.getElementById('prediction-cards-container');
+                container.innerHTML = '';
+                sorted.slice(0, 5).forEach((stock, i) => {
+                    const isPositive = stock.expected_return >= 0;
+                    const card = document.createElement('div');
+                    card.className = 'prediction-card';
+                    card.innerHTML = `
+                        <div class="rank">#${i + 1}</div>
+                        <div class="ticker">${stock.ticker}</div>
+                        <div class="prediction-label">Retorno Esperado (3m)</div>
+                        <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
+                            ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
+                        </div>
+                        <div class="card-footer">
+                            <span>ROE: ${(stock.roe || 0).toFixed(1)}%</span>
+                            <span>P/L: ${(stock.p_e || 0).toFixed(1)}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // Render Full Table
+                const tbody = document.getElementById('prediction-table-body');
+                tbody.innerHTML = '';
+                sorted.forEach((stock, i) => {
+                    const ret = stock.expected_return;
+                    const isPositive = ret >= 0;
+                    const signal = ret > 10 ? { label: 'Compra Forte', cls: 'status-buy' }
+                                 : ret > 0  ? { label: 'Compra', cls: 'status-buy' }
+                                 : ret > -10 ? { label: 'Neutro', cls: 'status-hold' }
+                                 : { label: 'Venda', cls: 'status-sell' };
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${i + 1}</td>
+                        <td class="ticker-cell">${stock.ticker}</td>
+                        <td>R$ ${(stock.price || 0).toFixed(2)}</td>
+                        <td style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">
+                            ${isPositive ? '+' : ''}${ret.toFixed(2)}%
+                        </td>
+                        <td>${(stock.p_e || 0).toFixed(2)}</td>
+                        <td>${(stock.p_b || 0).toFixed(2)}</td>
+                        <td>${(stock.roe || 0).toFixed(2)}%</td>
+                        <td>${(stock.dividend_yield || 0).toFixed(2)}%</td>
+                        <td>${(stock.net_margin || 0).toFixed(2)}%</td>
+                        <td><span class="status-badge ${signal.cls}">${signal.label}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Update total label
+                document.getElementById('pred-total').textContent = filtered.length;
+            }
+
+            // Filter Buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.getAttribute('data-filter');
+                    applyFilters();
+                });
             });
 
-            // Render Full Table
-            const tbody = document.getElementById('prediction-table-body');
-            sorted.forEach((stock, i) => {
-                const ret = stock.expected_return;
-                const isPositive = ret >= 0;
-                const signal = ret > 10 ? { label: 'Compra Forte', cls: 'status-buy' }
-                             : ret > 0  ? { label: 'Compra', cls: 'status-buy' }
-                             : ret > -10 ? { label: 'Neutro', cls: 'status-hold' }
-                             : { label: 'Venda', cls: 'status-sell' };
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${i + 1}</td>
-                    <td class="ticker-cell">${stock.ticker}</td>
-                    <td>R$ ${(stock.price || 0).toFixed(2)}</td>
-                    <td style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">
-                        ${isPositive ? '+' : ''}${ret.toFixed(2)}%
-                    </td>
-                    <td>${(stock.p_e || 0).toFixed(2)}</td>
-                    <td>${(stock.p_b || 0).toFixed(2)}</td>
-                    <td>${(stock.roe || 0).toFixed(2)}%</td>
-                    <td>${(stock.dividend_yield || 0).toFixed(2)}%</td>
-                    <td>${(stock.net_margin || 0).toFixed(2)}%</td>
-                    <td><span class="status-badge ${signal.cls}">${signal.label}</span></td>
-                `;
-                tbody.appendChild(row);
-            });
+            // Initial render
+            applyFilters();
 
         } catch (error) {
             console.error('Erro ao carregar dados preditivos:', error);

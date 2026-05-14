@@ -145,14 +145,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Search functionality
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toUpperCase();
-        const filtered = stockData.filter(stock => stock.ticker.includes(query));
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    function applyFilters() {
+        let filtered = stockData;
+        
+        if (currentFilter !== 'all') {
+            filtered = filtered.filter(stock => stock.category === currentFilter);
+        }
+        
+        if (searchQuery) {
+            filtered = filtered.filter(stock => stock.ticker.includes(searchQuery));
+        }
+        
         renderTable(filtered);
+        updateStats(filtered);
+    }
+
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toUpperCase();
+            applyFilters();
+        });
+    }
+
+    // Filter Buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Update active state
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            currentFilter = e.target.getAttribute('data-filter');
+            applyFilters();
+        });
     });
 
-    refreshBtn.addEventListener('click', fetchData);
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', fetchData);
+    }
 
 
 
