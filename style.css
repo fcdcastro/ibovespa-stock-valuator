@@ -1,15 +1,15 @@
 :root {
     --bg-color: #050505;
-    --card-bg: #0d0d0d;
-    --glass-border: #003b00;
+    --card-bg: #111111;
+    --glass-border: #004d00;
     --text-primary: #00ff41;
-    --text-secondary: #008f11;
+    --text-secondary: #4dff79;
     --accent-color: #00ff41;
-    --accent-gradient: linear-gradient(180deg, #00ff41 0%, #008f11 100%);
+    --accent-gradient: linear-gradient(180deg, #00ff41 0%, #33ff66 100%);
     --success: #00ff41;
-    --danger: #ff0000;
-    --warning: #ffb000;
-    --shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+    --danger: #ff4d4d;
+    --warning: #ffcc00;
+    --shadow: 0 0 15px rgba(0, 255, 65, 0.2);
 }
 
 * {
@@ -103,6 +103,29 @@ nav {
     color: var(--text-primary);
     border-bottom-color: var(--accent-color);
     text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1px solid var(--text-secondary);
+    color: var(--text-secondary);
+    padding: 0.4rem 1rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.nav-btn:hover, .nav-btn.active {
+    background: rgba(0, 255, 65, 0.1);
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
 }
 
 .nav-actions {
@@ -325,9 +348,9 @@ table {
     display: inline-block;
 }
 
-.status-buy { background: rgba(0, 255, 65, 0.1); color: var(--success); border: 1px solid var(--success); }
-.status-hold { background: rgba(255, 176, 0, 0.1); color: var(--warning); border: 1px solid var(--warning); }
-.status-sell { background: rgba(255, 0, 0, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+.status-buy { background: rgba(0, 255, 65, 0.2); color: var(--success); border: 1px solid var(--success); box-shadow: 0 0 8px rgba(0,255,65,0.4); text-shadow: 0 0 5px rgba(0,255,65,0.5); }
+.status-hold { background: rgba(255, 204, 0, 0.2); color: var(--warning); border: 1px solid var(--warning); box-shadow: 0 0 8px rgba(255,204,0,0.4); text-shadow: 0 0 5px rgba(255,204,0,0.5); }
+.status-sell { background: rgba(255, 77, 77, 0.2); color: var(--danger); border: 1px solid var(--danger); box-shadow: 0 0 8px rgba(255,77,77,0.4); text-shadow: 0 0 5px rgba(255,77,77,0.5); }
 
 /* Buttons */
 .primary-btn {
