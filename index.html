@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AVALIAÇÃO SUPPLIERS - Algoritmo de Valuation Ibovespa</title>
+    <title>Avaliação fundamentalista - (Mid/Small Caps)</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +17,7 @@
         <div class="nav-content">
             <div class="logo">
                 <i data-lucide="trending-up" class="logo-icon"></i>
-                <span>AVALIAÇÃO<span>SUPPLIERS</span></span>
+                <span>Avaliação fundamentalista - <span>(Mid/Small Caps)</span></span>
             </div>
             <button id="refresh-btn" class="primary-btn">
                 <i data-lucide="refresh-cw"></i>
@@ -27,10 +27,8 @@
     </nav>
 
     <main>
-        <header class="hero">
-            <h1>Análise Fundamentalista</h1>
-            <p>Algoritmo inteligente de valuation para ações da B3. Graham, Bazin e Magic Formula em tempo real.</p>
-        </header>
+        <!-- Seção Hero Removida para otimização de espaço -->
+
 
         <section class="stats-grid" id="summary-stats">
             <div class="stat-card">
@@ -49,7 +47,7 @@
 
         <section class="table-container glass">
             <div class="table-header">
-                <h2>Ranking de Valuation</h2>
+                <h2>Ranking de Valuation <span id="last-updated" class="timestamp"></span></h2>
                 <div class="search-box">
                     <i data-lucide="search"></i>
                     <input type="text" id="search-input" placeholder="Buscar ticker...">

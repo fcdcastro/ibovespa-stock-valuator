@@ -32,10 +32,12 @@ class ValuationModels:
         Using EBITDA/Total Assets as ROC proxy and EBITDA/MarketCap as Yield proxy.
         """
         # Return on Capital Proxy
-        roc = metrics.get("ebitda", 0) / metrics.get("total_assets", 1)
+        total_assets = metrics.get("total_assets", 0)
+        roc = metrics.get("ebitda", 0) / total_assets if total_assets and total_assets > 0 else 0
+        
         # Earnings Yield Proxy
-        market_cap = metrics.get("market_cap", 1)
-        earnings_yield = metrics.get("ebitda", 0) / market_cap if market_cap > 0 else 0
+        market_cap = metrics.get("market_cap", 0)
+        earnings_yield = metrics.get("ebitda", 0) / market_cap if market_cap and market_cap > 0 else 0
         
         return roc, earnings_yield
 

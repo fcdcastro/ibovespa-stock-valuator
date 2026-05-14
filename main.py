@@ -1,88 +1,98 @@
 import pandas as pd
-from data_provider import BrapiProvider
+import numpy as np
+from data_provider import YahooFinanceProvider
 from analyzer import StockAnalyzer
 from valuation import ValuationModels
 import time
 
 def run_valuation_pipeline(tickers):
-    provider = BrapiProvider()
+    provider = YahooFinanceProvider()
     results = []
 
-    print(f"Starting analysis for {len(tickers)} stocks...")
+    print(f"Iniciando coleta inteligente de {len(tickers)} ativos...")
 
     for i, ticker in enumerate(tickers):
-        print(f"[{i+1}/{len(tickers)}] Analyzing {ticker}...")
+        print(f"[{i+1}/{len(tickers)}] Processando {ticker}...")
         
-        # 1. Fetch data
+        # 1. Buscar Dados via Yahoo Finance
         raw_data = provider.get_stock_data(ticker)
         if not raw_data:
             continue
 
-        # 2. Extract and Calculate Ratios
+        # 2. Extrair Métricas com Tratamento de Erros
         metrics = StockAnalyzer.extract_metrics(raw_data)
         if not metrics:
+            # Se não retornar métricas (ex: sem preço), o analyzer retorna None
+            print(f"[AVISO] {ticker}: Dados incompletos ou ativo inativo. Pulando.")
             continue
 
-        # 3. Apply Valuation Models
+        # 3. Aplicar Modelos de Valuation
         full_data = ValuationModels.apply_all(metrics)
         if full_data:
             results.append(full_data)
+            print(f"[OK] {ticker} capturado com sucesso.")
         
-        # Small delay to respect API rate limits (optional depending on plan)
-        time.sleep(0.1)
+        # Delay de 0.5s para evitar bloqueio (Rate Limit)
+        time.sleep(0.5)
 
     if not results:
-        print("No data collected.")
+        print("❌ Nenhum dado foi coletado.")
         return None
 
-    # Create DataFrame
+    # Criar DataFrame
     df = pd.DataFrame(results)
     
-    # Ranking Logic
-    # 1. Magic Formula Ranking (Rank by ROC and Yield, then sum ranks)
-    df['roc_rank'] = df['magic_roc'].rank(ascending=False)
-    df['yield_rank'] = df['magic_yield'].rank(ascending=False)
-    df['magic_score'] = df['roc_rank'] + df['yield_rank']
+    # --- TRATAMENTO DE DADOS INTELIGENTE (Sugestão do Usuário) ---
     
-    # 2. Final Sorting (By Upside or Magic Score)
+    # 1. Preencher lacunas numéricas com a mediana para não perder a linha
+    # Apenas para colunas numéricas
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())
+    
+    # 2. Lógica de Ranking Magic Formula
+    if 'magic_roc' in df.columns and 'magic_yield' in df.columns:
+        df['roc_rank'] = df['magic_roc'].rank(ascending=False)
+        df['yield_rank'] = df['magic_yield'].rank(ascending=False)
+        df['magic_score'] = df['roc_rank'] + df['yield_rank']
+    
+    # 3. Ordenação Final (Aqui ordenamos por ROE conforme o exemplo, mas mantemos Upside como principal)
     df = df.sort_values(by="upside", ascending=False)
     
     return df
 
 if __name__ == "__main__":
-    # Sample list of major Ibovespa stocks (Blue Chips)
-    # In a real scenario, we could fetch the full list using provider.get_available_tickers()
+    # Nova lista de tickers de 2ª linha (Mid/Small Caps) fornecida pelo usuário
     target_tickers = [
-        "VALE3", "PETR4", "ITUB4", "BBDC4", "ABEV3", 
-        "BBAS3", "ELET3", "WEGE3", "RENT3", "SANB11"
+        "ACER3.SA", "AZUL4.SA", "BEES3.SA", "BRFS3.SA", "CSAN3.SA",
+        "CYRE3.SA", "EGIE3.SA", "HAPV3.SA", "HAGA3.SA", "IRBR3.SA",
+        "LWSA3.SA", "MGLU3.SA", "QUAL3.SA", "RADL3.SA", "SUZB3.SA",
+        "VAMO3.SA", "WEGE3.SA", "XPLG3.SA", "YDUQ3.SA", "ZAP3.SA"
     ]
 
     try:
         df_results = run_valuation_pipeline(target_tickers)
         
         if df_results is not None:
-            # Reorder columns for better readability
-            cols = [
-                'ticker', 'price', 'upside', 'valuation_graham', 'valuation_dcf', 
-                'p_e', 'p_b', 'dividend_yield', 'roe', 'magic_score'
-            ]
-            display_df = df_results[cols]
+            # Selecionar colunas para o resumo no terminal (estilo o exemplo do usuário)
+            resumo_cols = ['ticker', 'p_e', 'p_b', 'roe', 'dividend_yield', 'upside']
+            # Garantir que as colunas existem
+            resumo_cols = [c for c in resumo_cols if c in df_results.columns]
             
-            print("\n--- STOCK RANKING (Sorted by Upside) ---")
-            print(display_df.to_string(index=False))
+            print("\n--- DADOS PROCESSADOS PARA ANÁLISE ---")
+            print(df_results[resumo_cols].head(10).to_string(index=False))
             
-            # Save to CSV
-            output_file = "valuation_results.csv"
-            df_results.to_csv(output_file, index=False)
-            print(f"\nResults saved to {output_file}")
+            # Salvar CSV Limpo (Usando separador ";" conforme solicitado para Excel)
+            output_file = "carteira_fundamentalista_limpa.csv"
+            df_results.to_csv(output_file, index=False, sep=";")
             
-            # Save to JSON for GitHub Pages
-            json_file = "data.json"
-            # Replace NaN/Inf with None for JSON
-            df_json = df_results.replace([float('inf'), float('-inf')], None)
+            # Manter compatibilidade com o Dashboard (data.json)
+            df_json = df_results.replace([np.inf, -np.inf], None)
             df_json = df_json.where(df_json.notnull(), None)
-            df_json.to_json(json_file, orient='records', indent=2)
-            print(f"Results saved to {json_file}")
+            df_json.to_json("data.json", orient='records', indent=2)
+            
+            print(f"\nSucesso! Dados salvos em '{output_file}' e 'data.json'.")
             
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Erro critico no pipeline: {e}")
+        import traceback
+        traceback.print_exc()

@@ -1,61 +1,36 @@
-import os
-import requests
-from dotenv import load_dotenv
+import yfinance as yf
+import time
 
-load_dotenv()
-
-class BrapiProvider:
-    BASE_URL = "https://brapi.dev/api/quote"
-
-    def __init__(self):
-        self.token = os.getenv("BRAPI_TOKEN")
-        if not self.token:
-            raise ValueError("BRAPI_TOKEN not found in .env file")
-
-    def get_stock_data(self, ticker, modules="balanceSheetHistory,incomeStatementHistory"):
+class YahooFinanceProvider:
+    def get_stock_data(self, ticker):
         """
-        Fetches fundamental and market data for a given ticker.
+        Busca dados fundamentais e de mercado para um ticker usando yfinance.
         """
-        url = f"{self.BASE_URL}/{ticker}"
-        params = {
-            "token": self.token,
-            "modules": modules
-        }
-        
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        # Garante que o ticker tenha o sufixo .SA para o mercado brasileiro
+        if not ticker.endswith(".SA"):
+            yf_ticker = f"{ticker}.SA"
+        else:
+            yf_ticker = ticker
             
-            if not data.get("results"):
-                print(f"No results found for ticker: {ticker}")
+        try:
+            stock = yf.Ticker(yf_ticker)
+            # O yfinance.info retorna um dicionário com os dados fundamentais
+            info = stock.info
+            
+            if not info or len(info) <= 5: # Se retornar quase nada
+                print(f"Dados insuficientes para o ticker: {yf_ticker}")
                 return None
                 
-            return data["results"][0]
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching data for {ticker}: {e}")
+            return info
+        except Exception as e:
+            print(f"Erro ao buscar dados para {yf_ticker} no Yahoo Finance: {e}")
             return None
 
-    def get_available_tickers(self):
-        """
-        Fetches all available tickers from Brapi.
-        """
-        url = "https://brapi.dev/api/quote/list"
-        params = {"token": self.token}
-        
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            return [stock['stock'] for stock in data.get('stocks', [])]
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching ticker list: {e}")
-            return []
-
 if __name__ == "__main__":
-    # Test with VALE3
-    provider = BrapiProvider()
+    # Teste rápido com VALE3
+    provider = YahooFinanceProvider()
     data = provider.get_stock_data("VALE3")
     if data:
-        print(f"Successfully fetched data for {data.get('symbol')}")
-        print(f"Price: {data.get('regularMarketPrice')}")
+        print(f"Sucesso ao buscar dados para {data.get('symbol')}")
+        print(f"Preço Atual: {data.get('currentPrice')}")
+        print(f"P/L: {data.get('trailingPE')}")

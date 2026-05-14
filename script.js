@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
             stockData = await response.json();
             renderTable(stockData);
             updateStats(stockData);
+            
+            // Atualiza o tempo de atualização
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('last-updated').textContent = `[Atualizado às ${timeStr}]`;
         } catch (error) {
             console.error('Erro:', error);
             alert('Erro ao conectar com o servidor. Certifique-se de que o server.py está rodando.');

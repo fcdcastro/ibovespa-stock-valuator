@@ -3,3 +3,4 @@ pandas
 python-dotenv
 flask
 flask-cors
+yfinance
