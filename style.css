@@ -84,7 +84,8 @@ nav {
 .nav-links {
     display: flex;
     gap: 1.5rem;
-    margin-left: 2rem;
+    margin-left: auto; /* Empurra para a direita */
+    margin-right: 1rem;
 }
 
 .nav-link {
@@ -178,26 +179,42 @@ nav {
     font-size: 1.2rem;
 }
 
+/* Controls Row */
+.controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 10px;
+    background: #0d0d0d;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.action-cards {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 /* Stats Grid */
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    display: flex;
     gap: 0.5rem;
-    width: 100%;
-    margin: 0.5rem 0 0.5rem 0; /* Reduzido */
-    padding: 0 10px;
+    width: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .stat-card {
     background: #0d0d0d;
     border: 1px solid var(--glass-border);
-    padding: 0.4rem 0.8rem; /* Reduzido */
+    padding: 0.2rem 0.6rem; /* Mais compacto */
     border-radius: 4px;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
     box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
     transition: all 0.3s ease;
+    min-width: 130px;
 }
 
 .stat-card:hover {
@@ -214,7 +231,7 @@ nav {
 }
 
 .stat-value {
-    font-size: 1.1rem;
+    font-size: 1rem; /* Reduzido */
     font-weight: 700;
 }
 
