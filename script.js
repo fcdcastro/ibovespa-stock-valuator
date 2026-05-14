@@ -14,28 +14,37 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         loadingOverlay.classList.remove('hidden');
         try {
-            // Try local API first (for development)
             let response;
             try {
                 response = await fetch('http://localhost:5000/api/valuation');
             } catch (e) {
-                // If local API fails, fetch the static data.json (for GitHub Pages)
                 response = await fetch('data.json');
             }
 
             if (!response.ok) throw new Error('Falha ao buscar dados');
             
-            stockData = await response.json();
-            renderTable(stockData);
-            updateStats(stockData);
+            const rawData = await response.json();
             
-            // Atualiza o tempo de atualização
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('last-updated').textContent = `[Atualizado às ${timeStr}]`;
+            // Suporte para o novo formato com metadados
+            if (rawData.stocks) {
+                stockData = rawData.stocks;
+                renderTable(stockData);
+                updateStats(stockData);
+                renderPredictions(stockData, rawData.model_info);
+                
+                if (rawData.last_update) {
+                    document.getElementById('last-updated').textContent = `[Atualizado: ${rawData.last_update}]`;
+                }
+            } else {
+                // Legado: se vier apenas o array
+                stockData = rawData;
+                renderTable(stockData);
+                updateStats(stockData);
+            }
+            
         } catch (error) {
             console.error('Erro:', error);
-            alert('Erro ao conectar com o servidor. Certifique-se de que o server.py está rodando.');
+            alert('Erro ao conectar com o servidor. Verifique o console.');
         } finally {
             loadingOverlay.classList.add('hidden');
         }
@@ -52,27 +61,55 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const status = getStatusBadge(upside);
 
-            // Ensure all values exist or are null
-            const price = stock.price || 0;
-            const graham = stock.valuation_graham || null;
-            const dcf = stock.valuation_dcf || null;
-            const pe = stock.p_e || null;
-            const pvp = stock.p_b || stock.p_vp || null; 
-            const dy = stock.dividend_yield || 0;
-
             row.innerHTML = `
                 <td class="col-ticker ticker-cell">${stock.ticker || '-'}</td>
-                <td class="col-price">${formatCurrency(price)}</td>
+                <td class="col-price">${formatCurrency(stock.price)}</td>
                 <td class="col-target">${formatCurrency(stock.target_price)}</td>
-                <td class="col-graham">${formatCurrency(graham)}</td>
-                <td class="col-dcf">${formatCurrency(dcf)}</td>
+                <td class="col-graham">${formatCurrency(stock.valuation_graham)}</td>
+                <td class="col-dcf">${formatCurrency(stock.valuation_dcf)}</td>
                 <td class="col-upside ${upsideClass}">${upside.toFixed(2)}% ${upsideIcon}</td>
-                <td class="col-pl">${formatNumber(pe)}</td>
-                <td class="col-pvp">${formatNumber(pvp)}</td>
-                <td class="col-yield">${formatNumber(dy)}%</td>
+                <td class="col-pl">${formatNumber(stock.p_e)}</td>
+                <td class="col-pvp">${formatNumber(stock.p_b)}</td>
+                <td class="col-yield">${formatNumber(stock.dividend_yield)}%</td>
                 <td class="col-status"><span class="status-badge ${status.class}">${status.label}</span></td>
             `;
             tableBody.appendChild(row);
+        });
+    }
+
+    function renderPredictions(data, modelInfo) {
+        const container = document.getElementById('prediction-cards-container');
+        const r2El = document.getElementById('model-r2');
+        const maeEl = document.getElementById('model-mae');
+        
+        if (!container || !modelInfo) return;
+
+        // Atualizar métricas do cabeçalho
+        r2El.textContent = `R²: ${modelInfo.r2.toFixed(4)}`;
+        maeEl.textContent = `MAE: ${modelInfo.mae.toFixed(2)}%`;
+
+        // Pegar top 5 por expected_return
+        const top5 = [...data]
+            .filter(s => s.expected_return !== undefined)
+            .sort((a, b) => b.expected_return - a.expected_return)
+            .slice(0, 5);
+
+        container.innerHTML = '';
+        top5.forEach((stock, index) => {
+            const card = document.createElement('div');
+            card.className = 'prediction-card';
+            
+            card.innerHTML = `
+                <div class="rank">#${index + 1}</div>
+                <div class="ticker">${stock.ticker}</div>
+                <div class="prediction-label">Retorno Esperado (3m)</div>
+                <div class="prediction-value">${stock.expected_return.toFixed(2)}%</div>
+                <div class="card-footer">
+                    <span>ROE: ${stock.roe.toFixed(1)}%</span>
+                    <span>P/L: ${stock.p_e.toFixed(1)}</span>
+                </div>
+            `;
+            container.appendChild(card);
         });
     }
 

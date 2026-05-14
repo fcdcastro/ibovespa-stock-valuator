@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,9 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
     <div class="background-glow"></div>
-    
+
     <nav>
         <div class="nav-content">
             <div class="logo">
@@ -20,7 +22,12 @@
                 <span>Avaliação Le Gran - <span>(Mid/Small Caps)</span></span>
                 <span id="last-updated" class="timestamp"></span>
             </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active">Dashboard</a>
+                <a href="#prediction-section" class="nav-link">IA Preditiva</a>
+            </div>
             <div class="nav-actions">
+
                 <div class="search-box">
                     <i data-lucide="search"></i>
                     <input type="text" id="search-input" placeholder="Buscar ticker...">
@@ -52,7 +59,22 @@
             </div>
         </section>
 
+        <section class="prediction-section" id="prediction-section">
+            <div class="section-header">
+                <h2><i data-lucide="brain-circuit"></i> Inteligência Preditiva (Regression)</h2>
+                <div class="model-metrics">
+                    <span class="metric-badge">Model: Random Forest Regressor</span>
+                    <span class="metric-badge" id="model-r2">R²: -</span>
+                    <span class="metric-badge" id="model-mae">MAE: -%</span>
+                </div>
+            </div>
+            <div class="prediction-cards" id="prediction-cards-container">
+                <!-- Predictive cards will be injected here -->
+            </div>
+        </section>
+
         <section class="table-container glass">
+
 
             <div class="scrollable-table">
                 <table>
@@ -63,28 +85,34 @@
                             <th class="col-target">Preço Alvo</th>
                             <th class="col-graham">
                                 <div class="tooltip">Graham <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Método Graham:</b> Calcula o valor intrínseco considerando Lucro e Valor Patrimonial. Sugere um preço justo com margem de segurança.</span>
+                                    <span class="tooltiptext"><b>Método Graham:</b> Calcula o valor intrínseco
+                                        considerando Lucro e Valor Patrimonial. Sugere um preço justo com margem de
+                                        segurança.</span>
                                 </div>
                             </th>
                             <th class="col-dcf">
                                 <div class="tooltip">DCF <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Fluxo de Caixa Descontado:</b> Estima o valor da empresa baseado na projeção de lucros futuros trazidos ao valor presente.</span>
+                                    <span class="tooltiptext"><b>Fluxo de Caixa Descontado:</b> Estima o valor da
+                                        empresa baseado na projeção de lucros futuros trazidos ao valor presente.</span>
                                 </div>
                             </th>
                             <th class="col-upside">Upside</th>
                             <th class="col-pl">
                                 <div class="tooltip">P/L <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Preço/Lucro:</b> Indica quantos anos levaria para o investidor recuperar o capital investido através dos lucros da empresa.</span>
+                                    <span class="tooltiptext"><b>Preço/Lucro:</b> Indica quantos anos levaria para o
+                                        investidor recuperar o capital investido através dos lucros da empresa.</span>
                                 </div>
                             </th>
                             <th class="col-pvp">
                                 <div class="tooltip">P/VP <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Preço/Valor Patrimonial:</b> Mostra quanto o mercado aceita pagar pelo patrimônio líquido da companhia.</span>
+                                    <span class="tooltiptext"><b>Preço/Valor Patrimonial:</b> Mostra quanto o mercado
+                                        aceita pagar pelo patrimônio líquido da companhia.</span>
                                 </div>
                             </th>
                             <th class="col-yield">
                                 <div class="tooltip">Div. Yield <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Dividend Yield:</b> O rendimento gerado por dividendos nos últimos 12 meses em relação ao preço atual.</span>
+                                    <span class="tooltiptext"><b>Dividend Yield:</b> O rendimento gerado por dividendos
+                                        nos últimos 12 meses em relação ao preço atual.</span>
                                 </div>
                             </th>
                             <th class="col-status">Status</th>
@@ -107,4 +135,5 @@
         lucide.createIcons();
     </script>
 </body>
+
 </html>

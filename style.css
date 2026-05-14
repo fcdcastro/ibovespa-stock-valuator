@@ -79,6 +79,30 @@ nav {
     padding: 0 10px; /* Reduzido de 20px */
 }
 
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: 2rem;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 4px;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
 .nav-actions {
     display: flex;
     align-items: center;
@@ -433,4 +457,106 @@ table {
     border-width: 5px;
     border-style: solid;
     border-color: transparent transparent #1e293b transparent; /* Seta apontando para cima */
+}
+/* Predictive Section Styles */
+.prediction-section {
+    width: 100%;
+    margin: 1.5rem 0;
+    padding: 0 10px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.section-header h2 {
+    font-size: 1.2rem;
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.model-metrics {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.metric-badge {
+    background: rgba(0, 255, 65, 0.1);
+    border: 1px solid var(--glass-border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.prediction-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.prediction-card {
+    background: #0d0d0d;
+    border: 1px solid var(--glass-border);
+    padding: 1rem;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.prediction-card:hover {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    transform: translateY(-2px);
+}
+
+.prediction-card .rank {
+    position: absolute;
+    top: -5px;
+    right: 5px;
+    font-size: 2rem;
+    font-weight: 800;
+    opacity: 0.1;
+    color: var(--text-primary);
+}
+
+.prediction-card .ticker {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.prediction-card .prediction-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--success);
+}
+
+.prediction-card .prediction-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.prediction-card .card-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
 }
