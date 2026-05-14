@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Preditiva - Le Gran (Mid/Small Caps)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="background-glow"></div>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="brain-circuit" class="logo-icon"></i>
+                <span>Le Gran - <span>IA Preditiva</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="preditiva.html" class="nav-link active">IA Preditiva</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Model Info Header -->
+        <section class="stats-grid" id="model-stats">
+            <div class="stat-card">
+                <span class="stat-label">Modelo</span>
+                <span class="stat-value" style="font-size:0.9rem;">Random Forest</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">R² (Confiabilidade)</span>
+                <span class="stat-value highlight" id="model-r2">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">MAE (Erro Médio)</span>
+                <span class="stat-value" id="model-mae">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Ações Analisadas</span>
+                <span class="stat-value" id="pred-total">-</span>
+            </div>
+        </section>
+
+        <!-- Prediction Cards - Top 5 -->
+        <section class="prediction-section" id="prediction-section">
+            <div class="section-header">
+                <h2><i data-lucide="trophy"></i> TOP 5 - Maior Retorno Esperado (3 Meses)</h2>
+            </div>
+            <div class="prediction-cards" id="prediction-cards-container">
+                <!-- Cards injected by JS -->
+            </div>
+        </section>
+
+        <!-- Full Prediction Table -->
+        <section class="table-container glass">
+            <div class="section-header" style="padding: 1rem 10px 0;">
+                <h2><i data-lucide="table-2"></i> Ranking Completo - Retorno Esperado</h2>
+            </div>
+            <div class="scrollable-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:5%;">#</th>
+                            <th style="width:10%;">Ticker</th>
+                            <th style="width:12%;">Preço Atual</th>
+                            <th style="width:12%;">
+                                <div class="tooltip">Retorno Esperado <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Retorno Esperado:</b> Estimativa do modelo de IA para a valorização nos próximos 3 meses, baseada nos fundamentos atuais.</span>
+                                </div>
+                            </th>
+                            <th style="width:10%;">P/L</th>
+                            <th style="width:10%;">P/VP</th>
+                            <th style="width:10%;">ROE</th>
+                            <th style="width:10%;">Div. Yield</th>
+                            <th style="width:10%;">Margem Líq.</th>
+                            <th style="width:11%;">Sinal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prediction-table-body">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            let response;
+            try {
+                response = await fetch('http://localhost:5000/api/valuation');
+            } catch (e) {
+                response = await fetch('data.json');
+            }
+
+            const rawData = await response.json();
+            let stocks = [];
+            let modelInfo = null;
+
+            if (rawData.stocks) {
+                stocks = rawData.stocks;
+                modelInfo = rawData.model_info;
+            } else {
+                stocks = rawData;
+            }
+
+            // Update model metrics
+            if (modelInfo) {
+                document.getElementById('model-r2').textContent = modelInfo.r2.toFixed(4);
+                document.getElementById('model-mae').textContent = modelInfo.mae.toFixed(2) + '%';
+            }
+            document.getElementById('pred-total').textContent = stocks.length;
+
+            // Sort by expected_return descending
+            const sorted = [...stocks]
+                .filter(s => s.expected_return !== undefined && s.expected_return !== null)
+                .sort((a, b) => b.expected_return - a.expected_return);
+
+            // Render Top 5 Cards
+            const container = document.getElementById('prediction-cards-container');
+            sorted.slice(0, 5).forEach((stock, i) => {
+                const isPositive = stock.expected_return >= 0;
+                const card = document.createElement('div');
+                card.className = 'prediction-card';
+                card.innerHTML = `
+                    <div class="rank">#${i + 1}</div>
+                    <div class="ticker">${stock.ticker}</div>
+                    <div class="prediction-label">Retorno Esperado (3m)</div>
+                    <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
+                        ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
+                    </div>
+                    <div class="card-footer">
+                        <span>ROE: ${(stock.roe || 0).toFixed(1)}%</span>
+                        <span>P/L: ${(stock.p_e || 0).toFixed(1)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Render Full Table
+            const tbody = document.getElementById('prediction-table-body');
+            sorted.forEach((stock, i) => {
+                const ret = stock.expected_return;
+                const isPositive = ret >= 0;
+                const signal = ret > 10 ? { label: 'Compra Forte', cls: 'status-buy' }
+                             : ret > 0  ? { label: 'Compra', cls: 'status-buy' }
+                             : ret > -10 ? { label: 'Neutro', cls: 'status-hold' }
+                             : { label: 'Venda', cls: 'status-sell' };
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td class="ticker-cell">${stock.ticker}</td>
+                    <td>R$ ${(stock.price || 0).toFixed(2)}</td>
+                    <td style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">
+                        ${isPositive ? '+' : ''}${ret.toFixed(2)}%
+                    </td>
+                    <td>${(stock.p_e || 0).toFixed(2)}</td>
+                    <td>${(stock.p_b || 0).toFixed(2)}</td>
+                    <td>${(stock.roe || 0).toFixed(2)}%</td>
+                    <td>${(stock.dividend_yield || 0).toFixed(2)}%</td>
+                    <td>${(stock.net_margin || 0).toFixed(2)}%</td>
+                    <td><span class="status-badge ${signal.cls}">${signal.label}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar dados preditivos:', error);
+        }
+
+        lucide.createIcons();
+    });
+    </script>
+</body>
+</html>
