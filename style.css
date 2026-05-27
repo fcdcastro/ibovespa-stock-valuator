@@ -628,6 +628,15 @@ table {
     color: var(--accent-color);
 }
 
+.prediction-card .company-name {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: -0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .prediction-card .prediction-value {
     font-size: 1.8rem;
     font-weight: 800;
