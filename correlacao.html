@@ -118,11 +118,31 @@
                         <tr>
                             <th class="col-ticker">Ticker</th>
                             <th class="col-cat" style="width:10%;">Categoria</th>
-                            <th class="col-corr" style="width:22%;">Correlação</th>
-                            <th class="col-beta" style="width:10%;">Beta</th>
-                            <th class="col-vol" style="width:10%;">Vol. Ativo</th>
-                            <th class="col-vol" style="width:10%;">Vol. Ibov</th>
-                            <th class="col-pontos" style="width:8%;">Dados</th>
+                            <th class="col-corr" style="width:22%;">
+                                <div class="tooltip">Correlação <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Correlação de Pearson:</b> Mede o grau de relação linear entre os retornos do ativo e do Ibovespa. Varia de -1 a +1. Quanto mais próximo de +1, mais o ativo acompanha os movimentos do mercado.</span>
+                                </div>
+                            </th>
+                            <th class="col-beta" style="width:10%;">
+                                <div class="tooltip">Beta <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Beta (β):</b> Mede a sensibilidade do ativo em relação ao Ibovespa. β &gt; 1: ativo amplifica os movimentos do mercado. β &lt; 1: ativo é menos volátil que o mercado. β = 0: sem relação com o mercado.</span>
+                                </div>
+                            </th>
+                            <th class="col-vol" style="width:10%;">
+                                <div class="tooltip">Vol. Ativo <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Volatilidade do Ativo:</b> Desvio padrão dos retornos diários anualizados. Indica o risco individual do papel. Quanto maior, mais oscilações bruscas o ativo apresenta.</span>
+                                </div>
+                            </th>
+                            <th class="col-vol" style="width:10%;">
+                                <div class="tooltip">Vol. Ibov <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Volatilidade do Ibovespa:</b> Desvio padrão dos retornos diários anualizados do índice. Serve como referência de risco do mercado acionário brasileiro.</span>
+                                </div>
+                            </th>
+                            <th class="col-pontos" style="width:8%;">
+                                <div class="tooltip">Dados <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Pontos de Dados:</b> Número de pregões utilizados no cálculo. Quanto maior a amostra, mais estatisticamente significativa é a análise de correlação.</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="corr-table-body">
