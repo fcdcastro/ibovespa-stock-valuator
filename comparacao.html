@@ -38,60 +38,6 @@
             align-items: center;
             gap: 0.4rem;
         }
-        .rank-table { width: 100%; border-collapse: collapse; }
-        .rank-table th {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            padding: 0.3rem 0.5rem;
-            text-align: left;
-            border-bottom: 1px solid var(--glass-border);
-            background: #0d0d0d;
-            position: sticky;
-            top: 0;
-        }
-        .rank-table td {
-            font-size: 0.8rem;
-            padding: 0.4rem 0.5rem;
-            border-bottom: 1px solid #1a1a1a;
-            white-space: nowrap;
-        }
-        .rank-table tr:not(.rank-1):not(.rank-2):not(.rank-3):hover td { background: rgba(0,255,65,0.03); }
-        .rank-table tr.rank-1 td { background: rgba(255,215,0,0.1); }
-        .rank-table tr.rank-2 td { background: rgba(192,192,192,0.08); }
-        .rank-table tr.rank-3 td { background: rgba(205,127,50,0.06); }
-        .rank-pos-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            font-weight: 800;
-            font-size: 0.75rem;
-        }
-        .rank-pos-badge.gold   { background: rgba(255,215,0,0.2);   color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
-        .rank-pos-badge.silver { background: rgba(192,192,192,0.15); color: #c0c0c0; border: 1px solid rgba(192,192,192,0.3); }
-        .rank-pos-badge.bronze { background: rgba(205,127,50,0.15);  color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
-        .rank-pos-badge.plain  { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid #222; }
-        .model-name-cell {
-            font-weight: 600;
-            color: #e0e0e0;
-        }
-        .model-name-cell .winner-star { color: var(--accent-color); margin-left: 0.2rem; }
-        .type-badge {
-            padding: 0.15rem 0.4rem;
-            border-radius: 3px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .type-fund  { background: rgba(0,255,65,0.1);   color: var(--success); border: 1px solid var(--success); }
-        .type-ts    { background: rgba(255,204,0,0.1);  color: var(--warning); border: 1px solid var(--warning); }
-        .type-hyb   { background: rgba(100,100,255,0.15); color: #aabbff; border: 1px solid #5566cc; }
-        .r2-bar-wrap { background: #050505; border-radius: 3px; height: 6px; margin-top: 3px; }
-        .r2-bar      { height: 6px; border-radius: 3px; background: var(--accent-color); transition: width 0.6s ease; }
-        .r2-bar.neg  { background: var(--danger); }
         .heatmap-wrap { overflow-x: auto; }
         .heatmap-table { border-collapse: collapse; min-width: 500px; width: 100%; }
         .heatmap-table th {
@@ -176,6 +122,26 @@
         .horizon-chip { min-width: 42px; text-align: center; }
         .horizon-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); }
         .horizon-label { font-size: 0.65rem; color: var(--text-secondary); margin-right: 0.3rem; }
+        .podium-card {
+            text-align: center;
+            padding: 0.8rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        .podium-card.gold   { background: rgba(255,215,0,0.1);   border: 1px solid rgba(255,215,0,0.3); }
+        .podium-card.silver { background: rgba(192,192,192,0.08); border: 1px solid rgba(192,192,192,0.2); }
+        .podium-card.bronze { background: rgba(205,127,50,0.06);  border: 1px solid rgba(205,127,50,0.2); }
+        .podium-medal { font-size: 1.6rem; line-height: 1; }
+        .podium-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin: 0.2rem 0 0.3rem; }
+        .podium-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .podium-card.gold   .podium-name { color: #ffd700; }
+        .podium-card.silver .podium-name { color: #c0c0c0; }
+        .podium-card.bronze .podium-name { color: #cd7f32; }
+        .podium-stat { display: inline-flex; gap: 0.3rem; margin: 0 0.3rem; font-size: 0.7rem; }
+        .podium-stat-label { color: var(--text-secondary); }
+        .podium-stat-value { font-weight: 600; }
+        .podium-stat-value.pos { color: var(--success); }
+        .podium-stat-value.neg { color: var(--danger); }
     </style>
 </head>
 
@@ -241,24 +207,10 @@
 
         <!-- Grid principal: ranking + gráfico de barras -->
         <div class="cmp-grid">
-            <!-- Ranking de modelos -->
+            <!-- Ranking de modelos (top 3) -->
             <div class="cmp-card">
-                <h3><i data-lucide="trophy"></i> Ranking de Confiabilidade (R²)</h3>
-                <div style="overflow-y: auto; max-height: 340px;">
-                    <table class="rank-table" id="rank-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Modelo</th>
-                                <th>Tipo</th>
-                                <th>R²</th>
-                                <th>MAE</th>
-                                <th>Vitórias</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rank-table-body"></tbody>
-                    </table>
-                </div>
+                <h3><i data-lucide="trophy"></i> Pódio — Top 3 Modelos</h3>
+                <div id="podium-container"></div>
             </div>
 
             <!-- Gráfico de barras R² -->
@@ -433,8 +385,8 @@
         }
 
         function renderRanking(models, perTicker, chosen) {
-            const tbody = document.getElementById('rank-table-body');
-            tbody.innerHTML = '';
+            const container = document.getElementById('podium-container');
+            container.innerHTML = '';
 
             const tickers = Object.keys(perTicker);
             const wins = {};
@@ -449,57 +401,37 @@
             });
             const maxWins = Math.max(...Object.values(wins), 1);
 
-            const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
-            const rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+            // So top 3
+            const top3 = models.slice(0, 3);
+            const medalColors = ['gold', 'silver', 'bronze'];
+            const medalEmoji  = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+            const medalLabels = ['1\u00ba Lugar', '2\u00ba Lugar', '3\u00ba Lugar'];
 
-            models.forEach((m, i) => {
-                const isWinner = m.name === chosen;
-                const rank = i + 1;
-                const r2Valid  = m.r2 > -90;
-                const r2Pct    = r2Valid ? Math.min(Math.max(m.r2 * 100, 0), 100) : 0;
-                const w        = wins[m.name] || 0;
-                const wPct     = (w / maxWins * 100).toFixed(0);
-                const typeCls  = m.type === 'fundamentalista' ? 'type-fund'
-                               : m.type === 'hibrido'         ? 'type-hyb'
-                               :                                'type-ts';
-                const typeLabel = m.type === 'fundamentalista' ? 'Fundamentalista'
-                                : m.type === 'hibrido'         ? 'Hibrido'
-                                : 'Serie Temporal';
+            top3.forEach((m, i) => {
+                const r2Valid = m.r2 > -90;
+                const w = wins[m.name] || 0;
+                const wPct = maxWins > 0 ? (w / maxWins * 100).toFixed(0) : 0;
+                const card = document.createElement('div');
+                card.className = `podium-card ${medalColors[i]}`;
 
-                const tr = document.createElement('tr');
-                if (isWinner) tr.className = 'winner';
-                if (rank <= 3) tr.classList.add(rankClasses[rank-1]);
-
-                let badgeHtml;
-                if (rank === 1) {
-                    badgeHtml = `<span class="rank-pos-badge gold">${medals[0]}</span>`;
-                } else if (rank === 2) {
-                    badgeHtml = `<span class="rank-pos-badge silver">${medals[1]}</span>`;
-                } else if (rank === 3) {
-                    badgeHtml = `<span class="rank-pos-badge bronze">${medals[2]}</span>`;
-                } else {
-                    badgeHtml = `<span class="rank-pos-badge plain">${rank}</span>`;
-                }
-
-                tr.innerHTML = `
-                    <td>${badgeHtml}</td>
-                    <td><span class="model-name-cell">${m.name}${isWinner ? '<span class="winner-star">\u{1F3C6}</span>' : ''}</span></td>
-                    <td><span class="type-badge ${typeCls}">${typeLabel}</span></td>
-                    <td>
-                        <span style="color:${r2Valid && m.r2 >= 0 ? 'var(--success)' : 'var(--danger)'}">
-                            ${r2Valid ? m.r2.toFixed(4) : 'N/A'}
-                        </span>
-                        <div class="r2-bar-wrap">
-                            <div class="r2-bar ${m.r2 < 0 ? 'neg' : ''}" style="width:${r2Pct}%"></div>
-                        </div>
-                    </td>
-                    <td style="color:var(--text-secondary)">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</td>
-                    <td>
-                        <span style="font-weight:700;color:${w > 0 ? 'var(--accent-color)' : 'var(--text-secondary)'}">${w}</span>
-                        <div class="r2-bar-wrap"><div class="r2-bar" style="width:${wPct}%"></div></div>
-                    </td>
+                card.innerHTML = `
+                    <div class="podium-medal">${medalEmoji[i]}</div>
+                    <div class="podium-label">${medalLabels[i]}</div>
+                    <div class="podium-name">${m.name}</div>
+                    <div class="podium-stat">
+                        <span class="podium-stat-label">R\u00B2</span>
+                        <span class="podium-stat-value ${r2Valid && m.r2 >= 0 ? 'pos' : 'neg'}">${r2Valid ? m.r2.toFixed(4) : 'N/A'}</span>
+                    </div>
+                    <div class="podium-stat">
+                        <span class="podium-stat-label">MAE</span>
+                        <span class="podium-stat-value">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</span>
+                    </div>
+                    <div class="podium-stat">
+                        <span class="podium-stat-label">Vit\u00F3rias</span>
+                        <span class="podium-stat-value">${w} (${wPct}%)</span>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                container.appendChild(card);
             });
         }
 
