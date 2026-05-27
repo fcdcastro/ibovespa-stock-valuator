@@ -8,11 +8,8 @@ if ($existing) { Stop-Process -Id $existing -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 1
 
 # Start server in background
-$process = Start-Process -NoNewWindow -FilePath $python -ArgumentList "server.py" -WorkingDirectory $projectDir -PassThru -RedirectStandardOutput $logFile -RedirectStandardError $logFile
+$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList "server.py" -WorkingDirectory $projectDir -PassThru
 
 Write-Host "Servidor iniciado (PID: $($process.Id)) em http://localhost:5000"
 Write-Host "Log: $logFile"
 Write-Host "Para encerrar: Stop-Process -Id $($process.Id) -Force"
-
-# Keep the script running (required for scheduled task)
-$process.WaitForExit()

@@ -151,6 +151,21 @@
         .detail-bar-pos { background: linear-gradient(90deg, rgba(0,255,65,0.3), rgba(0,255,65,0.8)); color: var(--success); }
         .detail-bar-neg { background: linear-gradient(90deg, rgba(255,77,77,0.3), rgba(255,77,77,0.8)); color: var(--danger); }
         .chart-container { position: relative; height: 280px; }
+        .filter-chip {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .filter-chip:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .filter-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); font-weight: 700; }
+        .filter-chip[data-filter="ibov"].active { background: #00ff41; color: #050505; }
+        .filter-chip[data-filter="small"].active { background: #ffaa00; color: #050505; }
     </style>
 </head>
 
@@ -202,6 +217,11 @@
                     <span class="stat-value" id="stat-tickers">-</span>
                 </div>
             </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; padding:0 10px;">
+                <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">Todos</button>
+                <button class="filter-chip" data-filter="ibov" onclick="setFilter('ibov')">Ibovespa</button>
+                <button class="filter-chip" data-filter="small" onclick="setFilter('small')">Small/Mid Caps</button>
+            </div>
         </section>
 
         <!-- Grid principal: ranking + gráfico de barras -->
@@ -218,6 +238,7 @@
                                 <th>Tipo</th>
                                 <th>R²</th>
                                 <th>MAE</th>
+                                <th>Vitórias</th>
                             </tr>
                         </thead>
                         <tbody id="rank-table-body"></tbody>
@@ -257,6 +278,39 @@
 
     <script src="data.js"></script>
     <script>
+        // ── Classifica��o Ibovespa / Small Cap ────────────────────────────
+        const IBOV_TICKERS = [
+            "PETR4","VALE3","ITUB4","BBDC4","BBAS3","ABEV3","B3SA3","WEGE3","SUZB3","RENT3",
+            "LREN3","JBSS3","RADL3","EQTL3","ELET3","ELET6","HAPV3","PRIO3","RDOR3","RAIL3",
+            "SBSP3","VIVT3","BBSE3","CPLE6","CMIG4","CCRO3","CSNA3","GGBR4","USIM5","BRFS3",
+            "TOTS3","ASAI3","NTCO3","KLBN11","TIMS3","BPAC11","CSAN3","MGLU3","EGIE3","CPFE3",
+            "CYRE3","MULT3","VBBR3","CRFB3","ENGI11","TAEE11","TRPL4","ALOS3","IGTI11"
+        ];
+        function classifyTicker(tkr) {
+            return IBOV_TICKERS.includes(tkr) ? 'ibov' : 'small';
+        }
+
+        let currentFilter = 'all';
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-chip').forEach(el => {
+                el.classList.toggle('active', el.dataset.filter === f);
+            });
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const rows = document.querySelectorAll('#heatmap-body tr');
+            rows.forEach(tr => {
+                const tkr = tr.querySelector('.ticker-cell');
+                if (!tkr) return;
+                const cat = classifyTicker(tkr.textContent.trim());
+                const show = currentFilter === 'all' || cat === currentFilter;
+                tr.style.display = show ? '' : 'none';
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
         // ── Carregar dados ──────────────────────────────────────────────────
         let stocks = [], modelInfo = null;
@@ -325,15 +379,30 @@
 
         // ── Ranking de modelos ─────────────────────────────────────────────
         const tbody = document.getElementById('rank-table-body');
+        // Contar vitórias (quantos tickers cada modelo teve maior retorno previsto)
+        const wins = {};
+        allModels.forEach(m => wins[m.name] = 0);
+        tickers.forEach(tkr => {
+            const preds = perTicker[tkr] || {};
+            let bestModel = null, bestVal = -Infinity;
+            Object.entries(preds).forEach(([mName, val]) => {
+                if (val > bestVal) { bestVal = val; bestModel = mName; }
+            });
+            if (bestModel) wins[bestModel] = (wins[bestModel] || 0) + 1;
+        });
+        const maxWins = Math.max(...Object.values(wins), 1);
+
         allModels.forEach((m, i) => {
             const isWinner = m.name === chosenModel;
             const r2Valid  = m.r2 > -90;
             const r2Pct    = r2Valid ? Math.min(Math.max(m.r2 * 100, 0), 100) : 0;
+            const w        = wins[m.name] || 0;
+            const wPct     = (w / maxWins * 100).toFixed(0);
             const typeCls  = m.type === 'fundamentalista' ? 'type-fund'
                            : m.type === 'hibrido'         ? 'type-hyb'
                            :                                'type-ts';
             const typeLabel = m.type === 'fundamentalista' ? 'Fundamentalista'
-                            : m.type === 'hibrido'         ? 'Híbrido'
+                            : m.type === 'hibrido'         ? 'Hibrído'
                             : 'Série Temporal';
             const tr = document.createElement('tr');
             if (isWinner) tr.className = 'winner';
@@ -350,6 +419,10 @@
                     </div>
                 </td>
                 <td style="color:var(--text-secondary)">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</td>
+                <td>
+                    <span style="font-weight:700;color:${w > 0 ? 'var(--accent-color)' : 'var(--text-secondary)'}">${w}</span>
+                    <div class="r2-bar-wrap"><div class="r2-bar" style="width:${wPct}%"></div></div>
+                </td>
             `;
             tbody.appendChild(tr);
         });
