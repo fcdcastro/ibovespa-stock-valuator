@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -127,6 +128,20 @@
             <div id="loading" class="loading-overlay hidden">
                 <div class="loader"></div>
                 <p>Executando Algoritmo...</p>
+            </div>
+        </section>
+        <section class="rr-section" style="margin: 0.5rem 10px;">
+            <div class="rr-card" style="background:#0d0d0d;border:1px solid var(--glass-border);border-radius:4px;padding:1rem;">
+                <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent-color);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i data-lucide="scatter-chart"></i> Risco x Retorno
+                    <span id="ix-selection-indicator" style="display:none;margin-left:auto;font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-secondary);">
+                        <span style="color:var(--accent-color);font-weight:700;" id="ix-selected-label"></span>
+                        <button onclick="ixClearSelection()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem;padding:0 0.2rem 0 0.4rem;font-family:inherit;" title="Limpar seleção">&times;</button>
+                    </span>
+                </h3>
+                <div style="position:relative;width:100%;height:400px;">
+                    <canvas id="ix-scatter-chart"></canvas>
+                </div>
             </div>
         </section>
     </main>
