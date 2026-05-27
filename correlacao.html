@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlação com Ibovespa — Le Gran</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .date-picker { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+        .date-picker label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+        .date-picker input[type="date"] { background: #050505; border: 1px solid var(--glass-border); color: var(--text-primary); padding: 0.4rem 0.6rem; border-radius: 4px; font-family: inherit; font-size: 0.8rem; }
+        .date-picker input[type="date"]:focus { outline: none; border-color: var(--accent-color); }
+        .quick-btn { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+        .quick-btn:hover, .quick-btn.active { background: rgba(0,255,65,0.1); color: var(--text-primary); border-color: var(--accent-color); }
+        .corr-bar-wrap { background: #050505; border-radius: 3px; height: 6px; margin-top: 3px; width: 100px; display: inline-block; vertical-align: middle; }
+        .corr-bar { height: 6px; border-radius: 3px; transition: width 0.6s ease; }
+        .corr-bar.pos { background: var(--success); }
+        .corr-bar.neg { background: var(--danger); }
+        .corr-bar.weak { background: var(--warning); }
+        .search-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .server-badge { font-size: 0.65rem; color: var(--text-secondary); padding: 0.2rem 0.4rem; border: 1px solid var(--glass-border); border-radius: 3px; }
+    </style>
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="activity" class="logo-icon"></i>
+                <span>Le Gran — <span>Correlação com Ibovespa</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn" onclick="window.location.href='index.html'">Análise Atual</button>
+                <button class="nav-btn" onclick="window.location.href='preditiva.html'">IA Preditiva</button>
+                <button class="nav-btn" onclick="window.location.href='comparacao.html'">Comparação de Modelos</button>
+                <button class="nav-btn active">Correlação</button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div id="error-banner" class="error-banner hidden" style="margin: 10px;">
+            <i data-lucide="alert-triangle"></i>
+            <span id="error-message">Erro ao carregar dados de correlação.</span>
+            <button class="error-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
+        </div>
+
+        <section class="controls-row" style="margin-bottom:0.5rem;">
+            <div class="stats-grid" id="summary-stats">
+                <div class="stat-card">
+                    <span class="stat-label">Ativos Analisados</span>
+                    <span class="stat-value" id="stat-total">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Maior Correlação</span>
+                    <span class="stat-value highlight" id="stat-highest">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Menor Correlação</span>
+                    <span class="stat-value" id="stat-lowest" style="color:var(--danger);">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Correlação Média</span>
+                    <span class="stat-value" id="stat-avg">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Ibov. Retorno</span>
+                    <span class="stat-value" id="stat-ibov">-</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="controls-row" style="margin-bottom:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+            <div class="date-picker">
+                <span style="color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;font-weight:600;">Período:</span>
+                <label for="start-date">De</label>
+                <input type="date" id="start-date">
+                <label for="end-date">Até</label>
+                <input type="date" id="end-date">
+                <button id="apply-btn" class="primary-btn" style="padding:0.3rem 0.8rem;font-size:0.75rem;">
+                    <i data-lucide="search" style="width:14px;height:14px;"></i> Calcular
+                </button>
+                <span id="server-status" class="server-badge">📡 servidor necessário</span>
+            </div>
+            <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+                <button class="quick-btn" data-years="1">1 Ano</button>
+                <button class="quick-btn active" data-years="3">3 Anos</button>
+                <button class="quick-btn" data-years="5">5 Anos</button>
+            </div>
+        </section>
+
+        <section class="controls-row" style="margin-bottom:0.5rem;gap:0.5rem;">
+            <div class="search-row">
+                <div class="filter-bar" style="padding:0;border:none;display:flex;gap:10px;align-items:center;">
+                    <span style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;text-transform:uppercase;">Filtro:</span>
+                    <button class="nav-btn active filter-btn" data-filter="all">Todas</button>
+                    <button class="nav-btn filter-btn" data-filter="IBOVESPA">Ibovespa</button>
+                    <button class="nav-btn filter-btn" data-filter="SMALL_CAP">Small Caps</button>
+                </div>
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Buscar ticker..." style="width:140px;">
+                </div>
+            </div>
+        </section>
+
+        <section class="table-container glass">
+            <div class="scrollable-table" style="max-height:65vh;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-ticker">Ticker</th>
+                            <th class="col-cat" style="width:10%;">Categoria</th>
+                            <th class="col-corr" style="width:22%;">Correlação</th>
+                            <th class="col-beta" style="width:10%;">Beta</th>
+                            <th class="col-vol" style="width:10%;">Vol. Ativo</th>
+                            <th class="col-vol" style="width:10%;">Vol. Ibov</th>
+                            <th class="col-pontos" style="width:8%;">Dados</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corr-table-body">
+                    </tbody>
+                </table>
+            </div>
+            <div id="loading" class="loading-overlay hidden">
+                <div class="loader"></div>
+                <p>Calculando correlações...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="correlation_data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tbody = document.getElementById('corr-table-body');
+            const loadingEl = document.getElementById('loading');
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
+            const serverStatus = document.getElementById('server-status');
+
+            let allData = [];
+            let currentFilter = 'all';
+            let searchQuery = '';
+            let isServerAvailable = false;
+
+            function showError(msg) {
+                if (errorMessage) errorMessage.textContent = msg;
+                if (errorBanner) errorBanner.classList.remove('hidden');
+            }
+
+            function hideError() {
+                if (errorBanner) errorBanner.classList.add('hidden');
+            }
+
+            function getCorrLabel(corr) {
+                if (corr >= 0.9) return 'Muito Alta';
+                if (corr >= 0.7) return 'Alta';
+                if (corr >= 0.4) return 'Moderada';
+                if (corr >= 0) return 'Baixa';
+                return 'Negativa';
+            }
+
+            function renderTable(data) {
+                tbody.innerHTML = '';
+                let filtered = data;
+                if (currentFilter !== 'all') {
+                    filtered = filtered.filter(s => s.category === currentFilter);
+                }
+                if (searchQuery) {
+                    filtered = filtered.filter(s => s.ticker.includes(searchQuery));
+                }
+
+                filtered.forEach(s => {
+                    const corrPct = Math.min(Math.abs(s.correlation) * 100, 100);
+                    const corrLabel = getCorrLabel(s.correlation);
+                    const corrColor = s.correlation >= 0.7 ? 'var(--success)' : s.correlation >= 0 ? 'var(--warning)' : 'var(--danger)';
+                    const barClass = s.correlation >= 0.7 ? 'pos' : s.correlation >= 0 ? 'weak' : 'neg';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ticker-cell">${s.ticker}</td>
+                        <td><span class="type-badge ${s.category === 'IBOVESPA' ? 'type-fund' : 'type-ts'}">${s.category === 'IBOVESPA' ? 'Ibovespa' : 'Small Cap'}</span></td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span style="color:${corrColor};font-weight:700;">${s.correlation.toFixed(4)}</span>
+                                <div class="corr-bar-wrap"><div class="corr-bar ${barClass}" style="width:${corrPct}%"></div></div>
+                                <span style="font-size:0.65rem;color:var(--text-secondary);">${corrLabel}</span>
+                            </div>
+                        </td>
+                        <td style="color:${s.beta >= 1 ? 'var(--warning)' : 'var(--text-secondary)'}">${s.beta.toFixed(4)}</td>
+                        <td>${s.stock_volatility.toFixed(2)}%</td>
+                        <td>${s.ibov_volatility.toFixed(2)}%</td>
+                        <td style="color:var(--text-secondary)">${s.data_points}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            function updateStats(data) {
+                document.getElementById('stat-total').textContent = data.length;
+                if (data.length === 0) return;
+                const sorted = [...data].sort((a, b) => b.correlation - a.correlation);
+                document.getElementById('stat-highest').innerHTML = `${sorted[0].ticker} <span style="font-size:0.7rem;font-weight:normal;">(${sorted[0].correlation.toFixed(4)})</span>`;
+                document.getElementById('stat-lowest').innerHTML = `${sorted[sorted.length-1].ticker} <span style="font-size:0.7rem;font-weight:normal;">(${sorted[sorted.length-1].correlation.toFixed(4)})</span>`;
+                document.getElementById('stat-avg').textContent = (data.reduce((a, s) => a + s.correlation, 0) / data.length).toFixed(4);
+            }
+
+            function usePeriodData(years) {
+                const key = String(years);
+                const cache = window.__CORRELATION_DATA__;
+                if (cache && cache[key]) {
+                    const data = cache[key];
+                    allData = data.results || [];
+                    document.getElementById('stat-ibov').textContent = (data.ibov_total_return >= 0 ? '+' : '') + data.ibov_total_return + '%';
+                    renderTable(allData);
+                    updateStats(allData);
+                    hideError();
+                    return true;
+                }
+                return false;
+            }
+
+            async function setDateRange(years) {
+                loadingEl.classList.remove('hidden');
+                document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.quick-btn[data-years="${years}"]`).classList.add('active');
+
+                const end = new Date();
+                const start = new Date();
+                start.setFullYear(start.getFullYear() - years);
+                document.getElementById('start-date').value = start.toISOString().split('T')[0];
+                document.getElementById('end-date').value = end.toISOString().split('T')[0];
+
+                if (usePeriodData(years)) {
+                    loadingEl.classList.add('hidden');
+                    return;
+                }
+
+                // Fallback: try API
+                try {
+                    const resp = await fetch(`http://localhost:5000/api/correlation?start=${start.toISOString().split('T')[0]}&end=${end.toISOString().split('T')[0]}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (!data.error) {
+                            allData = data.results || [];
+                            document.getElementById('stat-ibov').textContent = (data.ibov_total_return >= 0 ? '+' : '') + data.ibov_total_return + '%';
+                            renderTable(allData);
+                            updateStats(allData);
+                            hideError();
+                            loadingEl.classList.add('hidden');
+                            return;
+                        }
+                    }
+                } catch {}
+
+                showError('Dados offline. Execute python generate_correlation.py para gerar o cache de correlação.');
+                loadingEl.classList.add('hidden');
+            }
+
+            // Quick buttons
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => setDateRange(parseInt(btn.dataset.years)));
+            });
+
+            // Apply custom dates (API only)
+            document.getElementById('apply-btn').addEventListener('click', async () => {
+                const start = document.getElementById('start-date').value;
+                const end = document.getElementById('end-date').value;
+                if (!start || !end) return;
+                loadingEl.classList.remove('hidden');
+                document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+                try {
+                    const resp = await fetch(`http://localhost:5000/api/correlation?start=${start}&end=${end}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (!data.error) {
+                            allData = data.results || [];
+                            document.getElementById('stat-ibov').textContent = (data.ibov_total_return >= 0 ? '+' : '') + data.ibov_total_return + '%';
+                            renderTable(allData);
+                            updateStats(allData);
+                            hideError();
+                            loadingEl.classList.add('hidden');
+                            return;
+                        }
+                    }
+                } catch {}
+                showError('Período customizado requer servidor rodando (python server.py).');
+                loadingEl.classList.add('hidden');
+            });
+
+            // Filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.getAttribute('data-filter');
+                    renderTable(allData);
+                    updateStats(allData);
+                });
+            });
+
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toUpperCase();
+                renderTable(allData);
+            });
+
+            // Check server availability
+            try {
+                const r = await fetch('http://localhost:5000/api/correlation?start=2025-01-01&end=2025-01-02');
+                if (r.ok) {
+                    isServerAvailable = true;
+                    serverStatus.textContent = '📡 servidor online';
+                    serverStatus.style.borderColor = 'var(--success)';
+                    serverStatus.style.color = 'var(--success)';
+                }
+            } catch {}
+
+            // Initial load
+            setDateRange(3);
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

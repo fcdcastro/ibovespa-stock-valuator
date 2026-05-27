@@ -118,7 +118,25 @@ if __name__ == "__main__":
                 f.write(";\n")
             
             print(f"\n[SUCESSO] Dados salvos com predicoes. R2 do modelo: {model_metrics['r2']:.4f}")
-            
+
+            print("\n--- Gerando dados de correlação com Ibovespa ---")
+            from correlation import CorrelationEngine
+            from datetime import datetime
+            _corr_engine = CorrelationEngine()
+            _end = datetime.now()
+            _all_periods = {}
+            for _y in [1, 3, 5]:
+                _start = _end.replace(year=_end.year - _y)
+                _data = _corr_engine.calculate(_start.strftime("%Y-%m-%d"), _end.strftime("%Y-%m-%d"))
+                if "error" not in _data:
+                    _all_periods[str(_y)] = _data
+                    print(f"  Correlação {_y} ano(s): {_data['total_tickers']} ativos")
+            with open("correlation_data.js", "w", encoding="utf-8") as f:
+                f.write("window.__CORRELATION_DATA__ = ")
+                json.dump(_all_periods, f)
+                f.write(";\n")
+            print("[OK] correlation_data.js gerado.\n")
+
     except Exception as e:
         print(f"Erro critico no pipeline: {e}")
         import traceback

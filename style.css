@@ -371,6 +371,11 @@ table {
 .status-hold { background: rgba(255, 204, 0, 0.2); color: var(--warning); border: 1px solid var(--warning); box-shadow: 0 0 8px rgba(255,204,0,0.4); text-shadow: 0 0 5px rgba(255,204,0,0.5); }
 .status-sell { background: rgba(255, 77, 77, 0.2); color: var(--danger); border: 1px solid var(--danger); box-shadow: 0 0 8px rgba(255,77,77,0.4); text-shadow: 0 0 5px rgba(255,77,77,0.5); }
 
+.type-badge { padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; }
+.type-fund  { background: rgba(0,255,65,0.1);   color: var(--success); border: 1px solid var(--success); }
+.type-ts    { background: rgba(255,204,0,0.1);  color: var(--warning); border: 1px solid var(--warning); }
+.type-hyb   { background: rgba(100,100,255,0.15); color: #aabbff; border: 1px solid #5566cc; }
+
 /* Buttons */
 .primary-btn {
     background: #050505;

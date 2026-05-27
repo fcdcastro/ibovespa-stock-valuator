@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, send_from_directory
+from datetime import datetime, timedelta
 from flask_cors import CORS
 from main import run_valuation_pipeline
+from correlation import CorrelationEngine
 import os
 import numpy as np
 import time
@@ -75,6 +77,16 @@ def get_valuation():
             if _cache["data"] is not None:
                 return jsonify(_cache["data"])
         return jsonify({"error": str(e)}), 500
+
+_corr_engine = CorrelationEngine()
+
+@app.route('/api/correlation', methods=['GET'])
+def get_correlation():
+    from flask import request
+    start = request.args.get('start', (datetime.now() - timedelta(days=365*3)).strftime('%Y-%m-%d'))
+    end = request.args.get('end', datetime.now().strftime('%Y-%m-%d'))
+    result = _corr_engine.calculate(start, end)
+    return jsonify(result)
 
 if __name__ == '__main__':
     print("Servidor iniciado em http://localhost:5000")
