@@ -11,19 +11,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let stockData = [];
 
+    const errorBanner = document.getElementById('error-banner');
+    const errorMessage = document.getElementById('error-message');
+
+    function showError(msg) {
+        if (errorMessage) errorMessage.textContent = msg;
+        if (errorBanner) errorBanner.classList.remove('hidden');
+    }
+
+    function hideError() {
+        if (errorBanner) errorBanner.classList.add('hidden');
+    }
+
     async function fetchData() {
         loadingOverlay.classList.remove('hidden');
+        hideError();
         try {
-            let response;
+            let rawData;
             try {
-                response = await fetch('http://localhost:5000/api/valuation');
+                const response = await fetch('http://localhost:5000/api/valuation');
+                if (response.ok) {
+                    rawData = await response.json();
+                } else {
+                    throw new Error('Servidor retornou erro');
+                }
             } catch (e) {
-                response = await fetch('data.json');
+                if (window.__STOCK_DATA__) {
+                    rawData = window.__STOCK_DATA__;
+                    showError('Servidor offline. Exibindo dados do cache local.');
+                } else {
+                    throw new Error('Servidor offline e nenhum cache local disponível.');
+                }
             }
-
-            if (!response.ok) throw new Error('Falha ao buscar dados');
-            
-            const rawData = await response.json();
             
             // Suporte para o novo formato com metadados
             if (rawData.stocks) {
@@ -46,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('Erro:', error);
-            alert('Erro ao conectar com o servidor. Verifique o console.');
+            showError('Erro ao carregar dados. Verifique se o servidor está rodando (python server.py) ou se o data.json existe.');
         } finally {
             loadingOverlay.classList.add('hidden');
         }
@@ -119,9 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!data.length) return;
 
         totalStocksEl.textContent = data.length;
-        
         const sortedByUpside = [...data].sort((a, b) => (b.upside || 0) - (a.upside || 0));
-        bestTickerEl.textContent = sortedByUpside[0].ticker;
+        const bestStock = sortedByUpside[0];
+        if (bestStock.name) {
+            bestTickerEl.innerHTML = `${bestStock.ticker} <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-left: 5px; text-transform: none; display: inline-block;">(${bestStock.name})</span>`;
+        } else {
+            bestTickerEl.textContent = bestStock.ticker;
+        }
         
         const avgUpside = data.reduce((acc, curr) => acc + (curr.upside || 0), 0) / data.length;
         avgUpsideEl.textContent = `${avgUpside.toFixed(1)}%`;

@@ -30,6 +30,7 @@ class StockAnalyzer:
         # Dicionário de métricas baseado na sugestão do usuário
         summary = {
             "ticker": ticker,
+            "name": data.get("longName") or data.get("shortName") or ticker,
             "price": clean_val(price),
             "p_e": clean_val(data.get('trailingPE')),
             "p_b": clean_val(data.get('priceToBook')),

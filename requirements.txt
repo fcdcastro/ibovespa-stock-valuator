@@ -1,6 +1,9 @@
 requests
 pandas
-python-dotenv
 flask
 flask-cors
 yfinance
+xgboost
+lightgbm
+statsmodels
+scikit-learn

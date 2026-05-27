@@ -6,6 +6,7 @@ __pycache__/
 venv/
 ENV/
 valuation_results.csv
+data.js
 *.log
 .system_generated/
 .tempmediaStorage/

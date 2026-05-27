@@ -51,7 +51,7 @@ def run_valuation_pipeline(tickers):
     ]
 
     for res in results:
-        res['category'] = 'IBOVESPA' if res['ticker'] in ibov_components else 'SMALL_CAP'
+        res['category'] = 'IBOVESPA' if f"{res['ticker']}.SA" in ibov_components else 'SMALL_CAP'
 
     # Criar DataFrame
     df = pd.DataFrame(results)
@@ -111,6 +111,11 @@ if __name__ == "__main__":
             import json
             with open("data.json", "w", encoding="utf-8") as f:
                 json.dump(final_output, f, indent=2)
+
+            with open("data.js", "w", encoding="utf-8") as f:
+                f.write("window.__STOCK_DATA__ = ")
+                json.dump(final_output, f)
+                f.write(";\n")
             
             print(f"\n[SUCESSO] Dados salvos com predicoes. R2 do modelo: {model_metrics['r2']:.4f}")
             

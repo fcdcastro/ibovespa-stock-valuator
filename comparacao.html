@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparação de Modelos de IA — Le Gran</title>
+    <meta name="description" content="Comparação avançada entre modelos de machine learning e deep learning para previsão de retorno de ações da B3.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── Layout específico desta página ── */
+        .cmp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0 10px 1rem;
+        }
+        @media (max-width: 900px) {
+            .cmp-grid { grid-template-columns: 1fr; }
+        }
+        .cmp-card {
+            background: #0d0d0d;
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+        .cmp-card h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        /* Ranking table */
+        .rank-table { width: 100%; border-collapse: collapse; }
+        .rank-table th {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            padding: 0.3rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            background: #0d0d0d;
+            position: sticky;
+            top: 0;
+        }
+        .rank-table td {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            white-space: nowrap;
+        }
+        .rank-table tr.winner td { color: var(--accent-color); font-weight: 700; }
+        .type-badge {
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .type-fund  { background: rgba(0,255,65,0.1);   color: var(--success); border: 1px solid var(--success); }
+        .type-ts    { background: rgba(255,204,0,0.1);  color: var(--warning); border: 1px solid var(--warning); }
+        .type-hyb   { background: rgba(100,100,255,0.15); color: #aabbff; border: 1px solid #5566cc; }
+        .r2-bar-wrap { background: #050505; border-radius: 3px; height: 6px; margin-top: 3px; }
+        .r2-bar      { height: 6px; border-radius: 3px; background: var(--accent-color); transition: width 0.6s ease; }
+        .r2-bar.neg  { background: var(--danger); }
+
+        /* Heatmap */
+        .heatmap-wrap { overflow-x: auto; }
+        .heatmap-table { border-collapse: collapse; min-width: 500px; width: 100%; }
+        .heatmap-table th {
+            font-size: 0.65rem;
+            padding: 0.3rem 0.5rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            text-align: center;
+            border: 1px solid #1a1a1a;
+            white-space: nowrap;
+            background: #050505;
+        }
+        .heatmap-table th.ticker-col { text-align: left; min-width: 70px; }
+        .heatmap-table td {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid #111;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        .heatmap-table td.ticker-cell {
+            text-align: left;
+            font-weight: 700;
+            color: var(--accent-color);
+            background: #050505;
+        }
+        /* Ticker detail panel */
+        .ticker-detail-panel {
+            background: #050505;
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 0 10px 1rem;
+        }
+        .ticker-detail-panel h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .detail-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.4rem;
+        }
+        .detail-model-name {
+            width: 160px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .detail-bar-outer {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 3px;
+            height: 14px;
+            overflow: hidden;
+        }
+        .detail-bar-inner {
+            height: 100%;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            transition: width 0.5s ease;
+        }
+        .detail-bar-pos { background: linear-gradient(90deg, rgba(0,255,65,0.3), rgba(0,255,65,0.8)); color: var(--success); }
+        .detail-bar-neg { background: linear-gradient(90deg, rgba(255,77,77,0.3), rgba(255,77,77,0.8)); color: var(--danger); }
+        .chart-container { position: relative; height: 280px; }
+    </style>
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="layers" class="logo-icon"></i>
+                <span>Le Gran — <span>Comparação de Modelos de IA</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn" onclick="window.location.href='index.html'">Análise Atual</button>
+                <button class="nav-btn" onclick="window.location.href='preditiva.html'">IA Preditiva</button>
+                <button class="nav-btn active">Comparação de Modelos</button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div id="error-banner" class="error-banner hidden" style="margin: 10px;">
+            <i data-lucide="alert-triangle"></i>
+            <span id="error-message">Erro ao conectar com o servidor.</span>
+            <button class="error-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
+        </div>
+        <!-- Cabeçalho de estatísticas rápidas -->
+        <section class="controls-row" style="margin-bottom:1rem;">
+            <div class="stats-grid" id="summary-stats">
+                <div class="stat-card">
+                    <span class="stat-label">Total de Modelos</span>
+                    <span class="stat-value" id="stat-total-models">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Modelo Vencedor</span>
+                    <span class="stat-value highlight" id="stat-winner">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Melhor R²</span>
+                    <span class="stat-value" id="stat-best-r2">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Menor MAE</span>
+                    <span class="stat-value" id="stat-best-mae">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Ativos Analisados</span>
+                    <span class="stat-value" id="stat-tickers">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Grid principal: ranking + gráfico de barras -->
+        <div class="cmp-grid">
+            <!-- Ranking de modelos -->
+            <div class="cmp-card">
+                <h3><i data-lucide="trophy"></i> Ranking de Confiabilidade (R²)</h3>
+                <div style="overflow-y: auto; max-height: 340px;">
+                    <table class="rank-table" id="rank-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Modelo</th>
+                                <th>Tipo</th>
+                                <th>R²</th>
+                                <th>MAE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rank-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Gráfico de barras R² -->
+            <div class="cmp-card">
+                <h3><i data-lucide="bar-chart-2"></i> R² por Modelo</h3>
+                <div class="chart-container">
+                    <canvas id="r2-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de detalhe por ticker (clique na tabela abaixo) -->
+        <div class="ticker-detail-panel" id="detail-panel" style="display:none;">
+            <h3><i data-lucide="zoom-in"></i> Retorno Esperado por Modelo — <span id="detail-ticker-label">-</span></h3>
+            <div id="detail-bars"></div>
+        </div>
+
+        <!-- Heatmap ticker × modelo -->
+        <section class="table-container glass" style="margin: 0 0 1rem;">
+            <div class="section-header" style="padding: 0.5rem 10px 0; border-bottom: none;">
+                <h2><i data-lucide="grid"></i> Heatmap — Retorno Esperado (%) por Ativo × Modelo</h2>
+                <span style="font-size:0.7rem; color:var(--text-secondary);">Clique em um ticker para ver o detalhe por modelo</span>
+            </div>
+            <div class="heatmap-wrap scrollable-table" style="max-height: 55vh; padding: 0.5rem 10px;">
+                <table class="heatmap-table" id="heatmap-table">
+                    <thead id="heatmap-head"></thead>
+                    <tbody id="heatmap-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+        // ── Carregar dados ──────────────────────────────────────────────────
+        let stocks = [], modelInfo = null;
+        const errorBanner = document.getElementById('error-banner');
+        const errorMessage = document.getElementById('error-message');
+
+        function showError(msg) {
+            if (errorMessage) errorMessage.textContent = msg;
+            if (errorBanner) errorBanner.classList.remove('hidden');
+        }
+
+        function hideError() {
+            if (errorBanner) errorBanner.classList.add('hidden');
+        }
+
+        try {
+            let raw;
+            try {
+                const resp = await fetch('http://localhost:5000/api/valuation');
+                if (resp.ok) {
+                    raw = await resp.json();
+                } else {
+                    throw new Error('Servidor retornou erro');
+                }
+            } catch {
+                if (window.__STOCK_DATA__) {
+                    raw = window.__STOCK_DATA__;
+                    showError('Servidor offline. Exibindo dados do cache local.');
+                } else {
+                    throw new Error('Servidor offline e nenhum cache local disponível.');
+                }
+            }
+            hideError();
+            stocks    = raw.stocks    || raw;
+            modelInfo = raw.model_info || null;
+        } catch(e) {
+            console.error('Erro ao carregar dados:', e);
+            showError('Erro ao carregar dados. Execute o pipeline (python server.py) primeiro.');
+        }
+
+        if (!modelInfo) {
+            document.body.insertAdjacentHTML('beforeend',
+                '<p style="color:var(--warning);padding:2rem;text-align:center;">Dados ainda não disponíveis. Execute o pipeline (python main.py) para gerar o data.json.</p>');
+            lucide.createIcons();
+            return;
+        }
+
+        const allModels   = modelInfo.all_models || [];
+        const perTicker   = modelInfo.per_ticker_predictions || {};
+        const chosenModel = modelInfo.chosen_model || '';
+        const tickers     = Object.keys(perTicker);
+        const modelNames  = allModels.map(m => m.name);
+
+        // ── Estatísticas rápidas ───────────────────────────────────────────
+        document.getElementById('stat-total-models').textContent = allModels.length;
+        document.getElementById('stat-winner').textContent       = chosenModel || '-';
+        document.getElementById('stat-tickers').textContent      = tickers.length;
+
+        const validR2  = allModels.filter(m => m.r2 > -90);
+        const validMAE = allModels.filter(m => m.mae < 900);
+        if (validR2.length)  document.getElementById('stat-best-r2').textContent  = validR2[0].r2.toFixed(4);
+        if (validMAE.length) {
+            const minMAE = validMAE.reduce((a,b) => a.mae < b.mae ? a : b);
+            document.getElementById('stat-best-mae').textContent = minMAE.mae.toFixed(2) + '%';
+        }
+
+        // ── Ranking de modelos ─────────────────────────────────────────────
+        const tbody = document.getElementById('rank-table-body');
+        allModels.forEach((m, i) => {
+            const isWinner = m.name === chosenModel;
+            const r2Valid  = m.r2 > -90;
+            const r2Pct    = r2Valid ? Math.min(Math.max(m.r2 * 100, 0), 100) : 0;
+            const typeCls  = m.type === 'fundamentalista' ? 'type-fund'
+                           : m.type === 'hibrido'         ? 'type-hyb'
+                           :                                'type-ts';
+            const typeLabel = m.type === 'fundamentalista' ? 'Fundamentalista'
+                            : m.type === 'hibrido'         ? 'Híbrido'
+                            : 'Série Temporal';
+            const tr = document.createElement('tr');
+            if (isWinner) tr.className = 'winner';
+            tr.innerHTML = `
+                <td>${i + 1}${isWinner ? ' 🏆' : ''}</td>
+                <td>${m.name}</td>
+                <td><span class="type-badge ${typeCls}">${typeLabel}</span></td>
+                <td>
+                    <span style="color:${r2Valid && m.r2 >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                        ${r2Valid ? m.r2.toFixed(4) : 'N/A'}
+                    </span>
+                    <div class="r2-bar-wrap">
+                        <div class="r2-bar ${m.r2 < 0 ? 'neg' : ''}" style="width:${r2Pct}%"></div>
+                    </div>
+                </td>
+                <td style="color:var(--text-secondary)">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // ── Gráfico de barras horizontal R² ───────────────────────────────
+        const chartLabels = allModels.map(m => m.name);
+        const chartData   = allModels.map(m => m.r2 > -90 ? m.r2 : null);
+        const chartColors = allModels.map(m =>
+            m.name === chosenModel
+                ? 'rgba(0,255,65,0.85)'
+                : m.r2 >= 0
+                    ? 'rgba(0,255,65,0.35)'
+                    : 'rgba(255,77,77,0.4)'
+        );
+        const ctx = document.getElementById('r2-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'R² (Confiabilidade)',
+                    data:  chartData,
+                    backgroundColor: chartColors,
+                    borderColor: chartColors.map(c => c.replace('0.85','1').replace('0.35','0.8').replace('0.4','0.8')),
+                    borderWidth: 1,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0d0d0d',
+                        borderColor: 'var(--glass-border)',
+                        borderWidth: 1,
+                        titleColor: '#00ff41',
+                        bodyColor: '#4dff79',
+                        callbacks: {
+                            label: ctx => ` R²: ${ctx.raw !== null ? ctx.raw.toFixed(4) : 'N/A'}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#1a1a1a' },
+                        ticks: { color: '#4dff79', font: { size: 10 } },
+                        min: -1
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#00ff41', font: { size: 10, family: "'Courier New', monospace" } }
+                    }
+                }
+            }
+        });
+
+        // ── Heatmap ────────────────────────────────────────────────────────
+        // Coletar todos os nomes de modelo presentes nos dados
+        const allModelNamesInData = [...new Set(
+            Object.values(perTicker).flatMap(obj => Object.keys(obj))
+        )];
+
+        // Cabeçalho
+        const thead = document.getElementById('heatmap-head');
+        const headRow = document.createElement('tr');
+        headRow.innerHTML = '<th class="ticker-col">Ticker</th>' +
+            allModelNamesInData.map(m => `<th title="${m}">${m.length > 12 ? m.substring(0,12)+'…' : m}</th>`).join('');
+        thead.appendChild(headRow);
+
+        // Calcular min/max global para colorização
+        const allVals = Object.values(perTicker)
+            .flatMap(obj => Object.values(obj))
+            .filter(v => typeof v === 'number');
+        const minVal = Math.min(...allVals);
+        const maxVal = Math.max(...allVals);
+
+        function heatColor(val) {
+            if (val === null || val === undefined) return '#111';
+            const norm = (val - minVal) / (maxVal - minVal + 0.001);
+            if (val >= 0) {
+                const g = Math.round(55 + norm * 200);
+                return `rgba(0, ${g}, 30, 0.4)`;
+            } else {
+                const r = Math.round(100 + (1 - norm) * 155);
+                return `rgba(${r}, 30, 30, 0.4)`;
+            }
+        }
+
+        // Corpo
+        const heatbody = document.getElementById('heatmap-body');
+        tickers.forEach(tkr => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.innerHTML = `<td class="ticker-cell">${tkr}</td>`;
+            allModelNamesInData.forEach(mName => {
+                const val = perTicker[tkr]?.[mName];
+                const display = val !== undefined ? (val >= 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`) : '—';
+                const td = document.createElement('td');
+                td.textContent = display;
+                td.style.background = heatColor(val);
+                td.style.color = val >= 0 ? 'var(--success)' : 'var(--danger)';
+                tr.appendChild(td);
+            });
+
+            tr.addEventListener('click', () => showDetail(tkr));
+            heatbody.appendChild(tr);
+        });
+
+        // ── Painel de detalhe por ticker ───────────────────────────────────
+        function showDetail(tkr) {
+            const panel = document.getElementById('detail-panel');
+            const barsDiv = document.getElementById('detail-bars');
+            document.getElementById('detail-ticker-label').textContent = tkr;
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            const data = perTicker[tkr] || {};
+            const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+            const absMax = Math.max(...entries.map(([,v]) => Math.abs(v)), 0.1);
+
+            barsDiv.innerHTML = '';
+            entries.forEach(([mName, val]) => {
+                const isPos    = val >= 0;
+                const widthPct = Math.min((Math.abs(val) / absMax) * 100, 100);
+                const label    = `${isPos ? '+' : ''}${val.toFixed(2)}%`;
+                const isChosen = mName === chosenModel;
+                const row = document.createElement('div');
+                row.className = 'detail-bar-row';
+                row.innerHTML = `
+                    <span class="detail-model-name" style="${isChosen ? 'color:var(--accent-color); font-weight:700;' : ''}">
+                        ${mName}${isChosen ? ' ✦' : ''}
+                    </span>
+                    <div class="detail-bar-outer">
+                        <div class="detail-bar-inner ${isPos ? 'detail-bar-pos' : 'detail-bar-neg'}"
+                             style="width:${widthPct}%">${label}</div>
+                    </div>
+                `;
+                barsDiv.appendChild(row);
+            });
+        }
+
+        lucide.createIcons();
+    });
+    </script>
+</body>
+</html>

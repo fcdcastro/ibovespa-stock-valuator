@@ -25,11 +25,17 @@
             <div class="nav-links">
                 <button class="nav-btn active" onclick="window.location.href='index.html'">Análise Atual</button>
                 <button class="nav-btn" onclick="window.location.href='preditiva.html'">Análise Preditiva Le Gran</button>
+                <button class="nav-btn" onclick="window.location.href='comparacao.html'">Comparação de Modelos</button>
             </div>
         </div>
     </nav>
 
     <main>
+        <div id="error-banner" class="error-banner hidden">
+            <i data-lucide="alert-triangle"></i>
+            <span id="error-message">Erro ao conectar com o servidor. Usando dados locais.</span>
+            <button class="error-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
+        </div>
         <section class="controls-row">
             <div class="stats-grid" id="summary-stats">
                 <div class="stat-card">
@@ -119,6 +125,7 @@
         </section>
     </main>
 
+    <script src="data.js"></script>
     <script src="script.js"></script>
     <script>
         lucide.createIcons();
