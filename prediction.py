@@ -135,10 +135,10 @@ class FundamentalsEngine:
 class TimeSeriesEngine:
     """
     Treina modelos de série temporal individualmente por ticker
-    e prevê o retorno para os próximos ~6 meses (180 dias).
+    e prevê o retorno para os próximos ~3 meses (90 dias).
     """
 
-    FORECAST_DAYS = 180
+    FORECAST_DAYS = 90
 
     def __init__(self):
         self.ts_results = {}  # {ticker: {model: retorno_previsto_%}}
@@ -258,7 +258,7 @@ class PredictionEngine:
         # ── 1. Retornos históricos para treino fundamentalista (6 meses) ────
         print("\n[1/3] Coletando retornos históricos de 6 meses para treinamento...")
         df['retorno_real'] = df['ticker'].apply(
-            lambda x: self.get_historical_return(f"{x}.SA", lookback_days=180)
+            lambda x: self.get_historical_return(f"{x}.SA", lookback_days=90)
         )
         train_df = df.dropna(subset=['retorno_real'])
         print(f"      → {len(train_df)}/{len(df)} ativos com dados de retorno suficientes.")

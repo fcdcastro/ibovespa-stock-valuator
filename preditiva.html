@@ -41,8 +41,8 @@
         <!-- Prediction Cards - Top 5 -->
         <section class="prediction-section" id="prediction-section">
             <div class="section-header" style="flex-wrap:wrap; gap:0.3rem;">
-                <h2><i data-lucide="trophy"></i> TOP 5 — Maior Retorno Esperado (6 Meses)</h2>
-                <span style="font-size:0.7rem;color:var(--text-secondary);">Previsão treinada com 180 pregões históricos</span>
+                <h2><i data-lucide="trophy"></i> TOP 5 — Maior Retorno Esperado (3 Meses)</h2>
+                <span style="font-size:0.7rem;color:var(--text-secondary);">Previsão treinada com 90 pregões históricos</span>
             </div>
             <div class="prediction-cards" id="prediction-cards-container">
                 <!-- Cards injected by JS -->
@@ -71,7 +71,7 @@
                             <th style="width:12%;">Preço Atual</th>
                             <th style="width:12%;">
                                 <div class="tooltip">Retorno Esperado <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Retorno Esperado:</b> Estimativa do modelo de IA treinado com 180 pregões históricos, prevendo a valorização nos próximos 6 meses com base nos fundamentos atuais.</span>
+                                    <span class="tooltiptext"><b>Retorno Esperado:</b> Estimativa do modelo de IA treinado com 90 pregões históricos, prevendo a valorização nos próximos 3 meses com base nos fundamentos atuais.</span>
                                 </div>
                             </th>
                             <th style="width:10%;">
@@ -178,7 +178,7 @@
                         <div class="rank">#${i + 1}</div>
                         <div class="ticker">${stock.ticker}</div>
                         <div class="company-name">${stock.name || stock.ticker}</div>
-                        <div class="prediction-label">Retorno Esperado (6m)</div>
+                        <div class="prediction-label">Retorno Esperado (3m)</div>
                         <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
                             ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
                         </div>
