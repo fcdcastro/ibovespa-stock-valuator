@@ -324,15 +324,15 @@
                         {
                             label: 'Ibovespa',
                             data: ibovPoints,
-                            backgroundColor: ctx => {
+                            pointBackgroundColor: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? 'rgba(0,255,65,1)' : 'rgba(0,255,65,0.5)';
                             },
-                            borderColor: ctx => {
+                            pointBorderColor: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? '#fff' : 'rgba(0,255,65,0.9)';
                             },
-                            borderWidth: ctx => {
+                            pointBorderWidth: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? 2 : 1;
                             },
@@ -345,15 +345,15 @@
                         {
                             label: 'Small/Mid Caps',
                             data: smallPoints,
-                            backgroundColor: ctx => {
+                            pointBackgroundColor: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? 'rgba(255,170,0,1)' : 'rgba(255,170,0,0.5)';
                             },
-                            borderColor: ctx => {
+                            pointBorderColor: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? '#fff' : 'rgba(255,170,0,0.9)';
                             },
-                            borderWidth: ctx => {
+                            pointBorderWidth: ctx => {
                                 const raw = ctx.raw;
                                 return raw && raw.isSelected ? 2 : 1;
                             },
