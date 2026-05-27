@@ -421,11 +421,14 @@
                 rr: d.risco > 0 ? d.retorno / d.risco : d.retorno
             })).sort((a, b) => b.rr - a.rr);
 
-            document.getElementById('stat-best').textContent = scored[0].ticker;
+            const best = scored[0];
+            document.getElementById('stat-best').innerHTML = `${best.ticker} <span style="font-size:0.65rem;color:var(--text-secondary);font-weight:400">(${best.retorno >= 0 ? '+' : ''}${best.retorno.toFixed(1)}% / risco ${best.risco.toFixed(1)})</span>`;
+
             const lowestRisk = data.reduce((a,b) => a.risco < b.risco ? a : b);
-            document.getElementById('stat-lowrisk').textContent = lowestRisk.ticker;
+            document.getElementById('stat-lowrisk').innerHTML = `${lowestRisk.ticker} <span style="font-size:0.65rem;color:var(--text-secondary);font-weight:400">(risco ${lowestRisk.risco.toFixed(1)})</span>`;
+
             const highestRet = data.reduce((a,b) => a.retorno > b.retorno ? a : b);
-            document.getElementById('stat-highest').textContent = highestRet.ticker;
+            document.getElementById('stat-highest').innerHTML = `${highestRet.ticker} <span style="font-size:0.65rem;color:var(--text-secondary);font-weight:400">(${highestRet.retorno >= 0 ? '+' : ''}${highestRet.retorno.toFixed(1)}%)</span>`;
         }
     </script>
 </body>
