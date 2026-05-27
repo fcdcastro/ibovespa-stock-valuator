@@ -293,17 +293,17 @@ nav {
 
 table {
     width: 100%;
-    min-width: 1200px;
+    min-width: 800px;
     border-collapse: collapse;
     text-align: left;
     table-layout: fixed;
 }
 
 th {
-    padding: 1rem;
+    padding: 0.4rem 0.5rem;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     white-space: nowrap;
     text-align: left;
@@ -316,36 +316,29 @@ th {
 }
 
 /* Col Widths */
-.col-ticker { width: 6%; }
-.col-price { width: 10%; }
-.col-target { width: 10%; }
-.col-graham { width: 12%; }
-.col-dcf { width: 12%; }
+.col-ticker { width: 8%; }
+.col-price { width: 11%; }
+.col-target { width: 11%; }
+.col-graham { width: 11%; }
+.col-dcf { width: 11%; }
 .col-upside { width: 11%; }
-.col-pl { width: 7%; }
-.col-pvp { width: 7%; }
-.col-yield { width: 11%; }
-.col-status { width: 14%; }
+.col-pl { width: 8%; }
+.col-pvp { width: 8%; }
+.col-yield { width: 10%; }
+.col-status { width: 11%; }
 
 td {
-    padding: 0.3rem 1rem; /* Reduzido drasticamente para alta densidade */
+    padding: 0.2rem 0.4rem;
     border-bottom: 1px solid #1a1a1a;
     white-space: nowrap;
     text-align: left;
     vertical-align: middle;
-    font-size: 0.9rem;
-}
-
-table {
-    width: 100%;
-    min-width: max-content;
-    border-collapse: collapse;
-    text-align: left;
+    font-size: 0.8rem;
 }
 
 .ticker-cell {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     color: var(--accent-color);
 }
 
