@@ -34,7 +34,7 @@ class StockAnalyzer:
             "price": clean_val(price),
             "p_e": clean_val(data.get('trailingPE')),
             "p_b": clean_val(data.get('priceToBook')),
-            "dividend_yield": clean_val(data.get('dividendYield'), 0) * 100,
+            "dividend_yield": clean_val(data.get('dividendYield'), 0),
             "roe": clean_val(data.get('returnOnEquity'), 0) * 100,
             "roa": clean_val(data.get('returnOnAssets'), 0) * 100,
             "net_margin": clean_val(data.get('profitMargins'), 0) * 100,
