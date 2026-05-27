@@ -66,12 +66,12 @@ def run_valuation_pipeline(tickers):
         df['yield_rank'] = df['magic_yield'].rank(ascending=False)
         df['magic_score'] = df['roc_rank'] + df['yield_rank']
     
-    # 4. Inteligencia Preditiva (Regressao)
+    # 4. Inteligencia Preditiva Multi-Horizonte
     engine = PredictionEngine()
     df, model_metrics = engine.train_and_predict(df)
     
-    # Ordenacao Final
-    df = df.sort_values(by="expected_return", ascending=False)
+    # Ordenacao Final pelo 3m (padrão)
+    df = df.sort_values(by="expected_return_3m", ascending=False)
     
     return df, model_metrics
 

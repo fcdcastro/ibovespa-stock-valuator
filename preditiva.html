@@ -1,110 +1,132 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Preditiva - Le Gran (Ibovespa & Mid/Small Caps)</title>
+    <title>IA Preditiva Multi-Horizonte — Le Gran</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .tab-bar { display:flex; gap:0; margin-bottom:0.5rem; }
+        .tab-btn { background:#0d0d0d; border:1px solid var(--glass-border); color:var(--text-secondary); padding:0.35rem 1rem; font-size:0.75rem; font-weight:600; cursor:pointer; text-transform:uppercase; transition:all 0.2s; font-family:inherit; }
+        .tab-btn:first-child { border-radius:4px 0 0 4px; }
+        .tab-btn:last-child { border-radius:0 4px 4px 0; }
+        .tab-btn:not(:last-child) { border-right:none; }
+        .tab-btn:hover, .tab-btn.active { background:rgba(0,255,65,0.1); color:var(--accent-color); border-color:var(--accent-color); }
+        .tab-btn.active { background:var(--accent-color); color:#050505; }
+        .consensus-bar { display:flex; gap:2px; align-items:center; }
+        .consensus-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .consensus-dot.pos { background:var(--success); }
+        .consensus-dot.neg { background:var(--danger); }
+        .consensus-dot.mid { background:var(--warning); }
+        .badge-consistency { display:inline-flex; align-items:center; gap:3px; padding:0.15rem 0.4rem; border-radius:3px; font-size:0.65rem; font-weight:700; }
+        .badge-high { background:rgba(0,255,65,0.15); color:var(--success); border:1px solid var(--success); }
+        .badge-mid { background:rgba(255,204,0,0.15); color:var(--warning); border:1px solid var(--warning); }
+        .badge-low { background:rgba(255,77,77,0.15); color:var(--danger); border:1px solid var(--danger); }
+        .mini-chart-wrap { width:100%; height:40px; }
+        .col-ret { min-width:85px; }
+        .col-signal { min-width:55px; }
+        th .tooltip { font-size:inherit; text-transform:inherit; letter-spacing:inherit; }
+    </style>
 </head>
-
 <body>
     <div class="background-glow"></div>
-
     <nav>
         <div class="nav-content">
-            <div class="logo">
-                <i data-lucide="brain-circuit" class="logo-icon"></i>
-                <span>Le Gran - <span>IA Preditiva (Ibovespa & Mid/Small Caps)</span></span>
-            </div>
+            <div class="logo"><i data-lucide="brain-circuit" class="logo-icon"></i><span>Le Gran — <span>IA Preditiva Multi-Horizonte</span></span></div>
             <div class="nav-links">
                 <button class="nav-btn" onclick="window.location.href='index.html'">Análise Atual</button>
-                <button class="nav-btn active" onclick="window.location.href='preditiva.html'">Análise Preditiva Le Gran</button>
+                <button class="nav-btn active">Preditiva</button>
                 <button class="nav-btn" onclick="window.location.href='comparacao.html'">Comparação de Modelos</button>
                 <button class="nav-btn" onclick="window.location.href='correlacao.html'">Correlação</button>
             </div>
         </div>
     </nav>
-
     <main>
-        <div id="error-banner" class="error-banner hidden" style="margin: 10px;">
+        <div id="error-banner" class="error-banner hidden" style="margin:10px;">
             <i data-lucide="alert-triangle"></i>
             <span id="error-message">Erro ao conectar com o servidor.</span>
             <button class="error-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
         </div>
 
-
-        <!-- Prediction Cards - Top 5 -->
-        <section class="prediction-section" id="prediction-section">
-            <div class="section-header" style="flex-wrap:wrap; gap:0.3rem;">
-                <h2><i data-lucide="trophy"></i> TOP 5 — Maior Retorno Esperado (3 Meses)</h2>
-                <span style="font-size:0.7rem;color:var(--text-secondary);">Previsão treinada com 90 pregões históricos</span>
+        <!-- TOP 5 Cards com abas por horizonte -->
+        <section class="prediction-section">
+            <div class="section-header" style="flex-wrap:wrap; gap:0.2rem;">
+                <h2><i data-lucide="trophy"></i> TOP 5 — <span id="card-period-label">3M</span></h2>
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="3m" onclick="switchCardTab('3m')">3M</button>
+                    <button class="tab-btn" data-tab="6m" onclick="switchCardTab('6m')">6M</button>
+                    <button class="tab-btn" data-tab="12m" onclick="switchCardTab('12m')">12M</button>
+                </div>
             </div>
-            <div class="prediction-cards" id="prediction-cards-container">
-                <!-- Cards injected by JS -->
+            <div class="prediction-cards" id="prediction-cards-container"></div>
+        </section>
+
+        <!-- Trajetória do TOP 1 -->
+        <section class="table-container glass" style="margin-bottom:0.5rem;">
+            <div class="section-header" style="padding:0.3rem 10px; border-bottom:none;">
+                <h2 style="font-size:1rem;"><i data-lucide="trending-up"></i> Trajetória — <span id="trajectory-label">carregando...</span></h2>
+            </div>
+            <div style="padding:0 10px 0.5rem;">
+                <div class="mini-chart-wrap"><canvas id="trajectory-chart"></canvas></div>
             </div>
         </section>
 
-        <!-- Full Prediction Table -->
-        <section class="table-container glass">
-            <div class="section-header" style="padding: 0.5rem 10px 0; border-bottom: none;">
-                <h2><i data-lucide="table-2"></i> Ranking Completo - Retorno Esperado</h2>
+        <!-- Ranking Completo Multi-Horizonte -->
+        <section class="table-container glass" style="margin-bottom:0.5rem;">
+            <div class="section-header" style="padding:0.3rem 10px 0; border-bottom:none;">
+                <h2 style="font-size:1rem;"><i data-lucide="table-2"></i> Ranking — Retorno Esperado por Horizonte</h2>
             </div>
-            <div class="filter-bar"
-                style="padding: 0 10px 5px; border-bottom: 1px solid var(--glass-border); display: flex; gap: 10px; align-items: center;">
-                <span
-                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Filtro:</span>
-                <button class="nav-btn active filter-btn" data-filter="all">Todas</button>
-                <button class="nav-btn filter-btn" data-filter="IBOVESPA">Ibovespa</button>
-                <button class="nav-btn filter-btn" data-filter="SMALL_CAP">Small Caps</button>
+            <div class="filter-bar" style="padding:0 10px 3px; border-bottom:1px solid var(--glass-border); display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span style="color:var(--text-secondary);font-size:0.75rem;font-weight:600;text-transform:uppercase;">Filtro:</span>
+                <button class="nav-btn active filter-btn" data-filter="all" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Todas</button>
+                <button class="nav-btn filter-btn" data-filter="IBOVESPA" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Ibovespa</button>
+                <button class="nav-btn filter-btn" data-filter="SMALL_CAP" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Small Caps</button>
+                <button class="nav-btn filter-btn" id="consensus-filter" data-filter="consensus" style="font-size:0.7rem;padding:0.25rem 0.6rem;border-color:var(--warning);color:var(--warning);">★ Consenso</button>
             </div>
-            <div class="scrollable-table">
+            <div class="scrollable-table" style="max-height:55vh;">
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:5%;">#</th>
-                            <th style="width:10%;">Ticker</th>
-                            <th style="width:12%;">Preço Atual</th>
-                            <th style="width:12%;">
-                                <div class="tooltip">Retorno Esperado <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Retorno Esperado:</b> Estimativa do modelo de IA treinado com 90 pregões históricos, prevendo a valorização nos próximos 3 meses com base nos fundamentos atuais.</span>
+                            <th style="width:3%;">#</th>
+                            <th style="width:7%;">Ticker</th>
+                            <th style="width:3%;">
+                                <div class="tooltip">★ <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Consistência:</b> Quantos horizontes (3M/6M/12M) o ativo aparece no TOP 10. 3/3 = alta convicção.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">
-                                <div class="tooltip">P/L <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Preço/Lucro:</b> Indica quantos anos de lucro seriam necessários para recuperar o investimento. Quanto menor, mais barata a ação em relação ao lucro que gera.</span>
+                            <th style="width:11%;">Empresa</th>
+                            <th style="width:6%;">Preço</th>
+                            <th class="col-ret">
+                                <div class="tooltip">3M <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Retorno 3 Meses:</b> Previsão do melhor modelo treinado com 90 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">
-                                <div class="tooltip">P/VP <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Preço/Valor Patrimonial:</b> Compara o preço da ação com seu patrimônio líquido por ação. P/VP &lt; 1 sugere que a ação pode estar subvalorizada.</span>
+                            <th class="col-signal">Sinal</th>
+                            <th class="col-ret">
+                                <div class="tooltip">6M <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Retorno 6 Meses:</b> Previsão do melhor modelo treinado com 180 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">
-                                <div class="tooltip">ROE <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Return on Equity:</b> Mede a rentabilidade do patrimônio líquido da empresa. Quanto maior, mais eficiente a empresa é em gerar lucro com seu capital próprio.</span>
+                            <th class="col-signal">Sinal</th>
+                            <th class="col-ret">
+                                <div class="tooltip">12M <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Retorno 12 Meses:</b> Previsão do melhor modelo treinado com 360 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">
-                                <div class="tooltip">Div. Yield <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Dividend Yield:</b> Rendimento gerado por dividendos nos últimos 12 meses em relação ao preço atual da ação. Indica o retorno em proventos.</span>
+                            <th class="col-signal">Sinal</th>
+                            <th style="width:8%;">
+                                <div class="tooltip">Consenso <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Consenso:</b> Direção predominante entre os 3 horizontes. ● = positivo, ○ = neutro, ● = negativo.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">
-                                <div class="tooltip">Margem Líq. <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Margem Líquida:</b> Percentual do faturamento que se converte em lucro líquido. Quanto maior, mais lucrativa é a empresa em relação à sua receita.</span>
-                                </div>
-                            </th>
-                            <th style="width:11%;">Sinal</th>
                         </tr>
                     </thead>
-                    <tbody id="prediction-table-body">
-                        <!-- Data injected by JS -->
-                    </tbody>
+                    <tbody id="prediction-table-body"></tbody>
                 </table>
             </div>
         </section>
@@ -112,135 +134,253 @@
 
     <script src="data.js"></script>
     <script>
+        const HORIZONS = ['3m', '6m', '12m'];
+        const HORIZON_LABELS = { '3m': '3M', '6m': '6M', '12m': '12M' };
+        const HORIZON_FIELD = { '3m': 'expected_return_3m', '6m': 'expected_return_6m', '12m': 'expected_return_12m' };
+        const TOP_N_CONSENSUS = 10;
+
+        let stocks = [], modelInfo = null;
+        let currentFilter = 'all';
+        let currentCardTab = '3m';
+        let chartInstance = null;
+
+        function showError(msg) {
+            const el = document.getElementById('error-message');
+            const banner = document.getElementById('error-banner');
+            if (el) el.textContent = msg;
+            if (banner) banner.classList.remove('hidden');
+        }
+        function hideError() {
+            const banner = document.getElementById('error-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function getSignal(ret) {
+            if (ret == null || isNaN(ret)) return { label: '-', cls: '' };
+            if (ret > 10) return { label: 'Compra Forte', cls: 'status-buy' };
+            if (ret > 0) return { label: 'Compra', cls: 'status-buy' };
+            if (ret > -10) return { label: 'Neutro', cls: 'status-hold' };
+            return { label: 'Venda', cls: 'status-sell' };
+        }
+
+        function getConsensusDots(s) {
+            const dots = [];
+            HORIZONS.forEach(h => {
+                const v = s[HORIZON_FIELD[h]];
+                const cls = v > 5 ? 'pos' : v < -5 ? 'neg' : 'mid';
+                dots.push(`<span class="consensus-dot ${cls}"></span>`);
+            });
+            return `<div class="consensus-bar">${dots.join('')}</div>`;
+        }
+
+        function calcConsistency(data) {
+            const rankMap = {};
+            HORIZONS.forEach(h => {
+                const sorted = [...data]
+                    .filter(s => s[HORIZON_FIELD[h]] != null)
+                    .sort((a, b) => b[HORIZON_FIELD[h]] - a[HORIZON_FIELD[h]]);
+                sorted.slice(0, TOP_N_CONSENSUS).forEach(s => {
+                    if (!rankMap[s.ticker]) rankMap[s.ticker] = 0;
+                    rankMap[s.ticker]++;
+                });
+            });
+            return rankMap;
+        }
+
+        function getConsistencyBadge(count) {
+            if (count >= 3) return `<span class="badge-consistency badge-high">${count}/3</span>`;
+            if (count === 2) return `<span class="badge-consistency badge-mid">${count}/3</span>`;
+            return `<span class="badge-consistency badge-low">${count}/3</span>`;
+        }
+
+        function switchCardTab(tab) {
+            currentCardTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+            renderCards();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('prediction-cards-container');
+            const field = HORIZON_FIELD[currentCardTab];
+            const label = HORIZON_LABELS[currentCardTab];
+            document.getElementById('card-period-label').textContent = label;
+
+            let filtered = stocks;
+            if (currentFilter !== 'all' && currentFilter !== 'consensus') {
+                filtered = filtered.filter(s => s.category === currentFilter);
+            }
+            if (currentFilter === 'consensus') {
+                const consistency = calcConsistency(stocks);
+                filtered = filtered.filter(s => (consistency[s.ticker] || 0) >= 2);
+            }
+
+            const sorted = [...filtered]
+                .filter(s => s[field] != null)
+                .sort((a, b) => b[field] - a[field]);
+
+            container.innerHTML = '';
+            sorted.slice(0, 5).forEach((s, i) => {
+                const v = s[field];
+                const isPos = v >= 0;
+                const card = document.createElement('div');
+                card.className = 'prediction-card';
+                card.innerHTML = `
+                    <div class="rank">#${i + 1}</div>
+                    <div class="ticker">${s.ticker}</div>
+                    <div class="company-name">${s.name || s.ticker}</div>
+                    <div class="prediction-label">Retorno Esperado (${label})</div>
+                    <div class="prediction-value" style="color:${isPos ? 'var(--success)' : 'var(--danger)'}">
+                        ${isPos ? '+' : ''}${v.toFixed(2)}%
+                    </div>
+                    <div class="card-footer">
+                        <span>ROE: ${(s.roe || 0).toFixed(1)}%</span>
+                        <span>P/L: ${(s.p_e || 0).toFixed(1)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Update trajectory chart for #1
+            updateTrajectory(sorted[0]);
+        }
+
+        function updateTrajectory(topStock) {
+            if (!topStock) return;
+            document.getElementById('trajectory-label').textContent = `${topStock.ticker} — ${topStock.name || topStock.ticker}`;
+
+            const vals = HORIZONS.map(h => topStock[HORIZON_FIELD[h]]);
+            if (vals.every(v => v == null)) return;
+
+            const ctx = document.getElementById('trajectory-chart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['3M', '6M', '12M'],
+                    datasets: [{
+                        data: vals,
+                        borderColor: 'var(--accent-color)',
+                        backgroundColor: 'rgba(0,255,65,0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: vals.map(v => v >= 0 ? 'var(--success)' : 'var(--danger)'),
+                        pointRadius: 4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0d0d0d',
+                            borderColor: 'var(--glass-border)',
+                            borderWidth: 1,
+                            titleColor: '#00ff41',
+                            bodyColor: '#4dff79',
+                            callbacks: {
+                                label: ctx => `${ctx.raw !== null ? (ctx.raw >= 0 ? '+' : '') + ctx.raw.toFixed(2) + '%' : 'N/A'}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } },
+                        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function renderTable() {
+            let filtered = stocks;
+            if (currentFilter !== 'all' && currentFilter !== 'consensus') {
+                filtered = filtered.filter(s => s.category === currentFilter);
+            }
+
+            const consistencyRank = calcConsistency(stocks);
+
+            if (currentFilter === 'consensus') {
+                filtered = filtered.filter(s => (consistencyRank[s.ticker] || 0) >= 2);
+            }
+
+            // Sort by 3m descending
+            const sorted = [...filtered]
+                .filter(s => s.expected_return_3m != null)
+                .sort((a, b) => b.expected_return_3m - a.expected_return_3m);
+
+            const tbody = document.getElementById('prediction-table-body');
+            tbody.innerHTML = '';
+
+            // Re-calcular consistência apenas para os filtrados (para exibir badge correto)
+            const filteredConsistency = calcConsistency(filtered);
+
+            sorted.forEach((s, i) => {
+                const sig = {};
+                HORIZONS.forEach(h => { sig[h] = getSignal(s[HORIZON_FIELD[h]]); });
+                const consis = filteredConsistency[s.ticker] || 0;
+                const tr = document.createElement('tr');
+                let html = `
+                    <td>${i + 1}</td>
+                    <td class="ticker-cell">${s.ticker}</td>
+                    <td>${getConsistencyBadge(consis)}</td>
+                    <td style="font-size:0.75rem;color:var(--text-secondary);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name || '-'}</td>
+                    <td>R$${(s.price || 0).toFixed(2)}</td>
+                `;
+                HORIZONS.forEach(h => {
+                    const v = s[HORIZON_FIELD[h]];
+                    const isPos = v >= 0;
+                    html += `
+                        <td style="color:${isPos ? 'var(--success)' : 'var(--danger)'};font-weight:700;">
+                            ${v != null ? (isPos ? '+' : '') + v.toFixed(2) + '%' : '-'}
+                        </td>
+                        <td><span class="status-badge ${sig[h].cls}" style="font-size:0.6rem;padding:0.1rem 0.3rem;">${sig[h].label}</span></td>
+                    `;
+                });
+                html += `<td>${getConsensusDots(s)}</td>`;
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
-            const errorBanner = document.getElementById('error-banner');
-            const errorMessage = document.getElementById('error-message');
-
-            function showError(msg) {
-                if (errorMessage) errorMessage.textContent = msg;
-                if (errorBanner) errorBanner.classList.remove('hidden');
-            }
-
-            function hideError() {
-                if (errorBanner) errorBanner.classList.add('hidden');
-            }
-
             try {
                 let rawData;
                 try {
-                    const response = await fetch('http://localhost:5000/api/valuation');
-                    if (response.ok) {
-                        rawData = await response.json();
-                    } else {
-                        throw new Error('Servidor retornou erro');
-                    }
-                } catch (e) {
+                    const resp = await fetch('http://localhost:5000/api/valuation');
+                    if (resp.ok) rawData = await resp.json();
+                    else throw new Error('Servidor retornou erro');
+                } catch {
                     if (window.__STOCK_DATA__) {
                         rawData = window.__STOCK_DATA__;
-                        showError('Servidor offline. Exibindo dados do cache local.');
-                    } else {
-                        throw new Error('Servidor offline e nenhum cache local disponível.');
-                    }
+                        showError('Servidor offline. Exibindo cache local.');
+                    } else throw new Error('Servidor offline e nenhum cache local disponível.');
                 }
                 hideError();
-                let stocks = [];
-                let modelInfo = null;
+                if (rawData.stocks) { stocks = rawData.stocks; modelInfo = rawData.model_info; }
+                else stocks = rawData;
 
-                if (rawData.stocks) {
-                    stocks = rawData.stocks;
-                    modelInfo = rawData.model_info;
-                } else {
-                    stocks = rawData;
-                }
-
-                let currentFilter = 'all';
-
-                function applyFilters() {
-                    let filtered = stocks;
-
-                    if (currentFilter !== 'all') {
-                        filtered = filtered.filter(stock => stock.category === currentFilter);
-                    }
-
-                    // Sort by expected_return descending
-                    const sorted = [...filtered]
-                        .filter(s => s.expected_return !== undefined && s.expected_return !== null)
-                        .sort((a, b) => b.expected_return - a.expected_return);
-
-                    // Render Top 5 Cards
-                    const container = document.getElementById('prediction-cards-container');
-                    container.innerHTML = '';
-                    sorted.slice(0, 5).forEach((stock, i) => {
-                        const isPositive = stock.expected_return >= 0;
-                        const card = document.createElement('div');
-                        card.className = 'prediction-card';
-                        card.innerHTML = `
-                        <div class="rank">#${i + 1}</div>
-                        <div class="ticker">${stock.ticker}</div>
-                        <div class="company-name">${stock.name || stock.ticker}</div>
-                        <div class="prediction-label">Retorno Esperado (3m)</div>
-                        <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
-                            ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
-                        </div>
-                        <div class="card-footer">
-                            <span>ROE: ${(stock.roe || 0).toFixed(1)}%</span>
-                            <span>P/L: ${(stock.p_e || 0).toFixed(1)}</span>
-                        </div>
-                    `;
-                        container.appendChild(card);
-                    });
-
-                    // Render Full Table
-                    const tbody = document.getElementById('prediction-table-body');
-                    tbody.innerHTML = '';
-                    sorted.forEach((stock, i) => {
-                        const ret = stock.expected_return;
-                        const isPositive = ret >= 0;
-                        const signal = ret > 10 ? { label: 'Compra Forte', cls: 'status-buy' }
-                            : ret > 0 ? { label: 'Compra', cls: 'status-buy' }
-                                : ret > -10 ? { label: 'Neutro', cls: 'status-hold' }
-                                    : { label: 'Venda', cls: 'status-sell' };
-
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                        <td>${i + 1}</td>
-                        <td class="ticker-cell">${stock.ticker}</td>
-                        <td>R$ ${(stock.price || 0).toFixed(2)}</td>
-                        <td style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">
-                            ${isPositive ? '+' : ''}${ret.toFixed(2)}%
-                        </td>
-                        <td>${(stock.p_e || 0).toFixed(2)}</td>
-                        <td>${(stock.p_b || 0).toFixed(2)}</td>
-                        <td>${(stock.roe || 0).toFixed(2)}%</td>
-                        <td>${(stock.dividend_yield || 0).toFixed(2)}%</td>
-                        <td>${(stock.net_margin || 0).toFixed(2)}%</td>
-                        <td><span class="status-badge ${signal.cls}">${signal.label}</span></td>
-                    `;
-                        tbody.appendChild(row);
-                    });
-                }
-
-                // Filter Buttons
+                // Filter buttons
                 document.querySelectorAll('.filter-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
+                    btn.addEventListener('click', e => {
                         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                         e.target.classList.add('active');
-                        currentFilter = e.target.getAttribute('data-filter');
-                        applyFilters();
+                        currentFilter = e.target.dataset.filter;
+                        renderTable();
+                        renderCards();
                     });
                 });
 
-                // Initial render
-                applyFilters();
-
-            } catch (error) {
-                console.error('Erro ao carregar dados preditivos:', error);
-                showError('Erro ao carregar dados. Verifique se o servidor está rodando (python server.py).');
+                renderTable();
+                renderCards();
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Erro:', e);
+                showError('Erro ao carregar dados. Execute python server.py primeiro.');
+                lucide.createIcons();
             }
-
-            lucide.createIcons();
         });
     </script>
 </body>
-
 </html>

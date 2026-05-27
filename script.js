@@ -109,10 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
         r2El.textContent = `R²: ${modelInfo.r2.toFixed(4)}`;
         maeEl.textContent = `MAE: ${modelInfo.mae.toFixed(2)}%`;
 
-        // Pegar top 5 por expected_return
+        // Pegar top 5 por expected_return_3m
         const top5 = [...data]
-            .filter(s => s.expected_return !== undefined)
-            .sort((a, b) => b.expected_return - a.expected_return)
+            .filter(s => s.expected_return_3m !== undefined)
+            .sort((a, b) => b.expected_return_3m - a.expected_return_3m)
             .slice(0, 5);
 
         container.innerHTML = '';
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="rank">#${index + 1}</div>
                 <div class="ticker">${stock.ticker}</div>
                 <div class="prediction-label">Retorno Esperado (3m)</div>
-                <div class="prediction-value">${stock.expected_return.toFixed(2)}%</div>
+                <div class="prediction-value">${stock.expected_return_3m.toFixed(2)}%</div>
                 <div class="card-footer">
                     <span>ROE: ${stock.roe.toFixed(1)}%</span>
                     <span>P/L: ${stock.p_e.toFixed(1)}</span>

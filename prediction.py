@@ -15,25 +15,18 @@ from xgboost import XGBRegressor
 
 warnings.filterwarnings('ignore')
 
-# Import opcionais com fallback gracioso
 try:
     from lightgbm import LGBMRegressor
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
-    print("[AVISO] LightGBM não encontrado. Pulando.")
 
 try:
     from statsmodels.tsa.arima.model import ARIMA
     HAS_ARIMA = True
 except ImportError:
     HAS_ARIMA = False
-    print("[AVISO] statsmodels não encontrado. ARIMA indisponível.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Utilitários compartilhados
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _safe_r2(y_true, y_pred):
     try:
@@ -49,20 +42,11 @@ def _safe_mae(y_true, y_pred):
         return 999.0
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MOTOR 1 — Modelos Fundamentalistas (cross-sectional)
-# ─────────────────────────────────────────────────────────────────────────────
-
 FEATURE_COLS = ['p_e', 'p_b', 'roe', 'dividend_yield', 'net_margin', 'debt_equity']
 
 
 class FundamentalsEngine:
-    """
-    Treina modelos de ML em dados fundamentalistas de múltiplos ativos
-    para prever o retorno percentual nos próximos 6 meses.
-    """
-
-    MODELS = {}  # populado em __init__
+    MODELS = {}
 
     def __init__(self):
         self.MODELS = {
@@ -74,33 +58,29 @@ class FundamentalsEngine:
         }
         if HAS_LIGHTGBM:
             self.MODELS["LightGBM"] = LGBMRegressor(n_estimators=200, learning_rate=0.05, random_state=42, verbose=-1)
-
         self.scaler = StandardScaler()
-        self.results = {}  # {model_name: {"r2": ..., "mae": ..., "model": ...}}
+        self.results = {}
 
-    def _prepare(self, X: pd.DataFrame) -> np.ndarray:
+    def _prepare(self, X):
         return self.scaler.transform(X.replace([np.inf, -np.inf], np.nan).fillna(0).clip(lower=0))
 
-    def train(self, df: pd.DataFrame, y: pd.Series):
+    def train(self, df, y):
         X = df[FEATURE_COLS].copy().replace([np.inf, -np.inf], np.nan).fillna(0).clip(lower=0)
         valid = ~X.isna().any(axis=1) & ~y.isna()
         X, y = X[valid], y[valid]
-
         if len(X) < 6:
-            print("  [Fundamentals] Dados insuficientes para treinamento.")
+            print("  [Fundamentals] Dados insuficientes.")
             return
-
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         self.scaler.fit(X_train)
         Xtr = self.scaler.transform(X_train)
         Xts = self.scaler.transform(X_test)
-
         for name, model in self.MODELS.items():
             try:
                 model.fit(Xtr, y_train)
                 preds = model.predict(Xts)
                 self.results[name] = {
-                    "r2":  _safe_r2(y_test, preds),
+                    "r2": _safe_r2(y_test, preds),
                     "mae": _safe_mae(y_test, preds),
                     "model": model,
                     "type": "fundamentalista"
@@ -109,8 +89,7 @@ class FundamentalsEngine:
             except Exception as e:
                 print(f"  [{name}] ERRO: {e}")
 
-    def predict_all(self, df: pd.DataFrame) -> dict:
-        """Retorna {model_name: array_de_predicoes} para todos os tickers."""
+    def predict_all(self, df):
         X = df[FEATURE_COLS].copy().replace([np.inf, -np.inf], np.nan).fillna(0).clip(lower=0)
         Xs = self.scaler.transform(X)
         preds = {}
@@ -128,23 +107,12 @@ class FundamentalsEngine:
         return name, self.results[name]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MOTOR 2 — Modelos de Séries Temporais (por ticker)
-# ─────────────────────────────────────────────────────────────────────────────
-
 class TimeSeriesEngine:
-    """
-    Treina modelos de série temporal individualmente por ticker
-    e prevê o retorno para os próximos ~3 meses (90 dias).
-    """
-
-    FORECAST_DAYS = 90
-
     def __init__(self):
-        self.ts_results = {}  # {ticker: {model: retorno_previsto_%}}
-        self.model_scores = {}  # {model_name: {r2, mae, n_samples}}
+        self.ts_results = {}
+        self.model_scores = {}
 
-    def _fetch_history(self, ticker: str) -> pd.Series | None:
+    def _fetch_history(self, ticker):
         try:
             t = yf.Ticker(ticker)
             hist = t.history(period="2y")
@@ -154,8 +122,7 @@ class TimeSeriesEngine:
         except Exception:
             return None
 
-    # ── ARIMA ──────────────────────────────────────────────────────────────
-    def _arima_return(self, series: pd.Series) -> float | None:
+    def _arima_return(self, series, forecast_days):
         if not HAS_ARIMA:
             return None
         try:
@@ -167,73 +134,62 @@ class TimeSeriesEngine:
             r2  = _safe_r2(test.values, forecast.values)
             mae = _safe_mae(test.values, forecast.values)
             self._accumulate_score("ARIMA", r2, mae)
-
-            # Projeção futura: ARIMA sobre série completa
             full_fit = ARIMA(series, order=(2, 1, 2)).fit()
-            future   = full_fit.forecast(steps=self.FORECAST_DAYS)
+            future = full_fit.forecast(steps=forecast_days)
             pct = ((future.iloc[-1] - series.iloc[-1]) / series.iloc[-1]) * 100
             return float(pct)
-        except Exception as e:
+        except Exception:
             return None
 
-    def _accumulate_score(self, name: str, r2: float, mae: float):
+    def _accumulate_score(self, name, r2, mae):
         if name not in self.model_scores:
             self.model_scores[name] = {"r2_sum": 0, "mae_sum": 0, "n": 0}
         self.model_scores[name]["r2_sum"]  += r2
         self.model_scores[name]["mae_sum"] += mae
         self.model_scores[name]["n"]       += 1
 
-    def run_for_ticker(self, ticker: str) -> dict:
-        """Retorna {model_name: retorno_pct} para um ticker."""
+    def run_for_ticker(self, ticker, forecast_days=90):
         series = self._fetch_history(ticker)
         if series is None:
             return {}
-
         results = {}
-        arima_pct  = self._arima_return(series)
-
-        if arima_pct is not None:   results["ARIMA"] = round(arima_pct, 2)
+        arima_pct = self._arima_return(series, forecast_days)
+        if arima_pct is not None:
+            results["ARIMA"] = round(arima_pct, 2)
         return results
 
-    def avg_scores(self) -> dict:
+    def avg_scores(self):
         scores = {}
         for name, data in self.model_scores.items():
             n = max(data["n"], 1)
             scores[name] = {
-                "r2":  round(data["r2_sum"] / n, 4),
+                "r2": round(data["r2_sum"] / n, 4),
                 "mae": round(data["mae_sum"] / n, 2),
-                "type": "serie_temporal" if name == "ARIMA" else "hibrido"
+                "type": "serie_temporal"
             }
         return scores
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ORQUESTRADOR PRINCIPAL
-# ─────────────────────────────────────────────────────────────────────────────
-
 class PredictionEngine:
-    """
-    Orquestra os dois motores de ML (Fundamentalista + Série Temporal)
-    e agrega os resultados em um dicionário padronizado para o frontend.
-    """
+    HORIZONS = {
+        "3m": 90,
+        "6m": 180,
+        "12m": 360
+    }
 
     def __init__(self):
-        self.fund_engine = FundamentalsEngine()
-        self.ts_engine   = TimeSeriesEngine()
         self.metrics = self._empty_metrics()
 
-    def _empty_metrics(self) -> dict:
+    def _empty_metrics(self):
         return {
             "chosen_model": "N/A",
             "r2": 0, "mae": 0,
-            "rf_r2": 0, "rf_mae": 0,
-            "xgb_r2": 0, "xgb_mae": 0,
-            "all_models": [],
+            "all_models": {},
+            "horizons": {},
             "per_ticker_predictions": {}
         }
 
-    def get_historical_return(self, ticker: str, lookback_days: int = 180) -> float | None:
-        """Retorno real dos últimos N dias (target para treinamento fundamentalista)."""
+    def get_historical_return(self, ticker, lookback_days=180):
         try:
             hist = yf.Ticker(ticker).history(period="2y")
             if len(hist) < lookback_days + 10:
@@ -248,92 +204,106 @@ class PredictionEngine:
         except Exception:
             return None
 
-    def train_and_predict(self, df_fundamentals: pd.DataFrame):
-        print("\n══════════════════════════════════════════════")
-        print("  MOTOR DE IA PREDITIVA — Múltiplos Modelos")
-        print("══════════════════════════════════════════════")
+    def train_and_predict(self, df_fundamentals):
+        print("\n" + "="*50)
+        print("  MOTOR DE IA PREDITIVA - Multiplos Horizontes")
+        print("="*50)
 
         df = df_fundamentals.copy()
+        all_per_ticker = {}
+        all_models_by_horizon = {}
+        horizon_best = {}
+        ts_engines = {}
 
-        # ── 1. Retornos históricos para treino fundamentalista (6 meses) ────
-        print("\n[1/3] Coletando retornos históricos de 6 meses para treinamento...")
-        df['retorno_real'] = df['ticker'].apply(
-            lambda x: self.get_historical_return(f"{x}.SA", lookback_days=90)
-        )
-        train_df = df.dropna(subset=['retorno_real'])
-        print(f"      → {len(train_df)}/{len(df)} ativos com dados de retorno suficientes.")
+        for horizon_label, horizon_days in self.HORIZONS.items():
+            print(f"\n--- Horizonte {horizon_label} ({horizon_days} dias) ---")
 
-        # ── 2. Treinar motor fundamentalista ─────────────────────────────────
-        print("\n[2/3] Treinando modelos fundamentalistas...")
-        self.fund_engine.train(train_df, train_df['retorno_real'])
-        fund_preds = self.fund_engine.predict_all(df)
+            # 1. Retornos historicos
+            print(f"[1/4] Coletando retornos historicos de {horizon_days} dias...")
+            df[f'retorno_real_{horizon_label}'] = df['ticker'].apply(
+                lambda x: self.get_historical_return(f"{x}.SA", lookback_days=horizon_days)
+            )
+            train_df = df.dropna(subset=[f'retorno_real_{horizon_label}'])
+            print(f"      -> {len(train_df)}/{len(df)} ativos com dados.")
 
-        # Melhor modelo fundamentalista
-        best_fund_name, best_fund_info = self.fund_engine.best()
-        if best_fund_name and best_fund_info:
-            df['expected_return'] = fund_preds.get(best_fund_name, [0.0] * len(df))
-        else:
-            df['expected_return'] = 0.0
+            # 2. Treinar fundamentalistas
+            print("[2/4] Treinando modelos fundamentalistas...")
+            fund_engine = FundamentalsEngine()
+            fund_engine.train(train_df, train_df[f'retorno_real_{horizon_label}'])
+            fund_preds = fund_engine.predict_all(df)
 
-        # ── 3. Treinar motor de séries temporais por ticker ──────────────────
-        print("\n[3/3] Executando modelos de série temporal por ticker...")
-        ts_per_ticker = {}
-        for i, row in df.iterrows():
-            tkr = f"{row['ticker']}.SA"
-            print(f"  → Série temporal: {row['ticker']}...", end=" ", flush=True)
-            ts_preds = self.ts_engine.run_for_ticker(tkr)
-            ts_per_ticker[row['ticker']] = ts_preds
-            label = ", ".join([f"{k}: {v:.1f}%" for k, v in ts_preds.items()]) or "sem dados"
-            print(label)
+            best_name, best_info = fund_engine.best()
+            if best_name and best_info:
+                df[f'expected_return_{horizon_label}'] = fund_preds.get(best_name, [0.0] * len(df))
+                print(f"      Melhor modelo: {best_name} (R²={best_info['r2']:.4f})")
+            else:
+                df[f'expected_return_{horizon_label}'] = 0.0
+                print("      Nenhum modelo convergiu.")
 
-        # ── 4. Montar per_ticker_predictions (fundamentalistas + TS) ─────────
-        tickers = df['ticker'].tolist()
-        per_ticker = {}
-        for i, tkr in enumerate(tickers):
-            per_ticker[tkr] = {}
-            # fundamentalistas
-            for mname, plist in fund_preds.items():
-                per_ticker[tkr][mname] = round(float(plist[i]), 2)
-            # séries temporais
-            for mname, pval in ts_per_ticker.get(tkr, {}).items():
-                per_ticker[tkr][mname] = pval
+            # 3. Per-ticker predictions
+            tickers = df['ticker'].tolist()
+            horizon_per_ticker = {}
+            for i, tkr in enumerate(tickers):
+                horizon_per_ticker[tkr] = {}
+                for mname, plist in fund_preds.items():
+                    horizon_per_ticker[tkr][mname] = round(float(plist[i]), 2)
+            all_per_ticker[horizon_label] = horizon_per_ticker
 
-        # ── 5. Montar all_models[] ────────────────────────────────────────────
-        all_models = []
-        for name, info in self.fund_engine.results.items():
-            all_models.append({
-                "name": name,
-                "r2":   round(info["r2"], 4),
-                "mae":  round(info["mae"], 2),
-                "type": "fundamentalista"
-            })
-        for name, info in self.ts_engine.avg_scores().items():
-            all_models.append({
-                "name": name,
-                "r2":   info["r2"],
-                "mae":  info["mae"],
-                "type": info["type"]
-            })
-        all_models.sort(key=lambda x: x["r2"], reverse=True)
+            # 4. Model metrics per horizon
+            horizon_models = []
+            for name, info in fund_engine.results.items():
+                horizon_models.append({
+                    "name": name,
+                    "r2": round(info["r2"], 4),
+                    "mae": round(info["mae"], 2),
+                    "type": "fundamentalista"
+                })
+            horizon_models.sort(key=lambda x: x["r2"], reverse=True)
+            all_models_by_horizon[horizon_label] = horizon_models
+            horizon_best[horizon_label] = horizon_models[0]["name"] if horizon_models else "N/A"
 
-        # Melhor global
-        best_global = all_models[0] if all_models else {"name": "N/A", "r2": 0, "mae": 0}
+            # TimeSeries (ARIMA) so para 3m
+            if horizon_label == "3m":
+                print("[3/4] Executando modelos de serie temporal por ticker...")
+                ts_engine = TimeSeriesEngine()
+                ts_per_ticker = {}
+                for i, row in df.iterrows():
+                    tkr = f"{row['ticker']}.SA"
+                    ts_preds = ts_engine.run_for_ticker(tkr, forecast_days=horizon_days)
+                    ts_per_ticker[row['ticker']] = ts_preds
+                    if ts_preds:
+                        for mname, pval in ts_preds.items():
+                            all_per_ticker[horizon_label][row['ticker']][mname] = pval
+                ts_scores = ts_engine.avg_scores()
+                for name, info in ts_scores.items():
+                    all_models_by_horizon[horizon_label].append({
+                        "name": name,
+                        "r2": info["r2"],
+                        "mae": info["mae"],
+                        "type": info["type"]
+                    })
+                all_models_by_horizon[horizon_label].sort(key=lambda x: x["r2"], reverse=True)
 
-        # ── 6. Métricas de legado para backward-compat ────────────────────────
-        rf_info  = self.fund_engine.results.get("Random Forest", {"r2": 0, "mae": 0})
-        xgb_info = self.fund_engine.results.get("XGBoost",       {"r2": 0, "mae": 0})
+        # Sort final da tabela pelo retorno 3m (padr�o)
+        df = df.sort_values(by="expected_return_3m", ascending=False)
+
+        # Montar m�tricas
+        best_global_name = horizon_best.get("3m", "N/A")
+        best_global_r2 = 0
+        for m in all_models_by_horizon.get("3m", []):
+            if m["name"] == best_global_name:
+                best_global_r2 = m["r2"]
+                break
 
         self.metrics = {
-            "chosen_model": best_global["name"],
-            "r2":    best_global["r2"],
-            "mae":   best_global["mae"],
-            "rf_r2":  rf_info["r2"],
-            "rf_mae": rf_info["mae"],
-            "xgb_r2":  xgb_info["r2"],
-            "xgb_mae": xgb_info["mae"],
-            "all_models": all_models,
-            "per_ticker_predictions": per_ticker
+            "chosen_model": best_global_name,
+            "r2": best_global_r2,
+            "mae": 0,
+            "horizons": list(self.HORIZONS.keys()),
+            "horizon_best": horizon_best,
+            "all_models": all_models_by_horizon,
+            "per_ticker_predictions": all_per_ticker
         }
 
-        print(f"\n✅ Modelo vencedor: {best_global['name']} (R²={best_global['r2']:.4f})")
+        print(f"\nOK Melhores modelos por horizonte: {horizon_best}")
         return df, self.metrics
