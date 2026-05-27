@@ -15,7 +15,7 @@
     <style>
         .rr-layout {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 2fr 3fr;
             gap: 1rem;
             padding: 0 10px 1rem;
         }
@@ -62,7 +62,8 @@
             border-bottom: 1px solid #1a1a1a;
             white-space: nowrap;
         }
-        .rr-table tr:hover td { background: rgba(0,255,65,0.03); }
+        .rr-table tr:hover td { background: rgba(0,255,65,0.05); }
+        .rr-table tr.selected td { background: rgba(0,255,65,0.1); }
         .rr-score {
             display: inline-block;
             padding: 0.15rem 0.5rem;
@@ -162,12 +163,6 @@
 
         <div class="rr-layout">
             <div class="rr-card">
-                <h3><i data-lucide="scatter-chart"></i> Risco (Disperção dos Modelos) x Retorno Esperado</h3>
-                <div class="chart-container">
-                    <canvas id="scatter-chart"></canvas>
-                </div>
-            </div>
-            <div class="rr-card">
                 <h3><i data-lucide="list"></i> Tabela Risco x Retorno</h3>
                 <div class="rr-table-wrap">
                     <table class="rr-table" id="rr-table">
@@ -181,6 +176,12 @@
                         </thead>
                         <tbody id="rr-table-body"></tbody>
                     </table>
+                </div>
+            </div>
+            <div class="rr-card">
+                <h3><i data-lucide="scatter-chart"></i> Risco (Disperção dos Modelos) x Retorno Esperado</h3>
+                <div class="chart-container" style="height:500px;">
+                    <canvas id="scatter-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -203,6 +204,7 @@
         let currentHorizon = '3m';
         let stocks = [], modelInfo = null;
         let scatterChartInstance = null;
+        let selectedTicker = null;
 
         function setFilter(f) {
             currentFilter = f;
@@ -306,27 +308,60 @@
             const ibovData = data.filter(d => d.category === 'ibov');
             const smallData = data.filter(d => d.category === 'small');
 
+            const ibovPoints = ibovData.map(d => ({
+                x: d.risco, y: d.retorno, ticker: d.ticker,
+                isSelected: d.ticker === selectedTicker
+            }));
+            const smallPoints = smallData.map(d => ({
+                x: d.risco, y: d.retorno, ticker: d.ticker,
+                isSelected: d.ticker === selectedTicker
+            }));
+
             scatterChartInstance = new Chart(ctx, {
                 type: 'scatter',
                 data: {
                     datasets: [
                         {
                             label: 'Ibovespa',
-                            data: ibovData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker })),
-                            backgroundColor: 'rgba(0,255,65,0.6)',
-                            borderColor: 'rgba(0,255,65,0.9)',
-                            borderWidth: 1,
-                            pointRadius: 5,
-                            pointHoverRadius: 8
+                            data: ibovPoints,
+                            backgroundColor: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 'rgba(0,255,65,1)' : 'rgba(0,255,65,0.5)';
+                            },
+                            borderColor: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? '#fff' : 'rgba(0,255,65,0.9)';
+                            },
+                            borderWidth: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 2 : 1;
+                            },
+                            pointRadius: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 10 : 5;
+                            },
+                            pointHoverRadius: 10
                         },
                         {
                             label: 'Small/Mid Caps',
-                            data: smallData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker })),
-                            backgroundColor: 'rgba(255,170,0,0.6)',
-                            borderColor: 'rgba(255,170,0,0.9)',
-                            borderWidth: 1,
-                            pointRadius: 5,
-                            pointHoverRadius: 8
+                            data: smallPoints,
+                            backgroundColor: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 'rgba(255,170,0,1)' : 'rgba(255,170,0,0.5)';
+                            },
+                            borderColor: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? '#fff' : 'rgba(255,170,0,0.9)';
+                            },
+                            borderWidth: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 2 : 1;
+                            },
+                            pointRadius: ctx => {
+                                const raw = ctx.raw;
+                                return raw && raw.isSelected ? 10 : 5;
+                            },
+                            pointHoverRadius: 10
                         }
                     ]
                 },
@@ -386,7 +421,6 @@
             const tbody = document.getElementById('rr-table-body');
             tbody.innerHTML = '';
 
-            // Calcular score: retorno / risco (se risco > 0)
             const scored = data.map(d => ({
                 ...d,
                 rr: d.risco > 0 ? d.retorno / d.risco : d.retorno
@@ -394,6 +428,8 @@
 
             scored.forEach(d => {
                 const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                if (d.ticker === selectedTicker) tr.classList.add('selected');
                 const score = scoreLabel(d.rr);
                 const retStr = d.retorno >= 0 ? `+${d.retorno.toFixed(2)}%` : `${d.retorno.toFixed(2)}%`;
                 const riskPct = Math.min(d.risco / 30 * 100, 100);
@@ -408,6 +444,10 @@
                     </td>
                     <td><span class="rr-score ${score}">${score}</span></td>
                 `;
+                tr.addEventListener('click', () => {
+                    selectedTicker = selectedTicker === d.ticker ? null : d.ticker;
+                    renderAll();
+                });
                 tbody.appendChild(tr);
             });
         }
