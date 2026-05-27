@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         .tab-bar { display:flex; gap:0; margin-bottom:0.5rem; }
-        .tab-btn { background:#0d0d0d; border:1px solid var(--glass-border); color:var(--text-secondary); padding:0.35rem 1rem; font-size:0.75rem; font-weight:600; cursor:pointer; text-transform:uppercase; transition:all 0.2s; font-family:inherit; }
+        .tab-btn { background:#0d0d0d; border:1px solid var(--glass-border); color:var(--text-secondary); padding:0.25rem 0.6rem; font-size:0.65rem; font-weight:600; cursor:pointer; text-transform:uppercase; transition:all 0.2s; font-family:inherit; }
         .tab-btn:first-child { border-radius:4px 0 0 4px; }
         .tab-btn:last-child { border-radius:0 4px 4px 0; }
         .tab-btn:not(:last-child) { border-right:none; }
@@ -78,48 +78,27 @@
         <!-- Ranking Completo Multi-Horizonte -->
         <section class="table-container glass" style="margin-bottom:0.5rem;">
             <div class="section-header" style="padding:0.3rem 10px 0; border-bottom:none;">
-                <h2 style="font-size:1rem;"><i data-lucide="table-2"></i> Ranking — Retorno Esperado por Horizonte</h2>
+                <h2 style="font-size:0.85rem;"><i data-lucide="table-2"></i> Ranking — Retorno por Horizonte</h2>
             </div>
-            <div class="filter-bar" style="padding:0 10px 3px; border-bottom:1px solid var(--glass-border); display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                <span style="color:var(--text-secondary);font-size:0.75rem;font-weight:600;text-transform:uppercase;">Filtro:</span>
-                <button class="nav-btn active filter-btn" data-filter="all" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Todas</button>
-                <button class="nav-btn filter-btn" data-filter="IBOVESPA" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Ibovespa</button>
-                <button class="nav-btn filter-btn" data-filter="SMALL_CAP" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Small Caps</button>
-                <button class="nav-btn filter-btn" id="consensus-filter" data-filter="consensus" style="font-size:0.7rem;padding:0.25rem 0.6rem;border-color:var(--warning);color:var(--warning);">★ Consenso</button>
+                            <div class="filter-bar" style="padding:0 10px 3px; border-bottom:1px solid var(--glass-border); display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                                <span style="color:var(--text-secondary);font-size:0.65rem;font-weight:600;text-transform:uppercase;">Filtro:</span>
+                                <button class="nav-btn active filter-btn" data-filter="all" style="font-size:0.6rem;padding:0.2rem 0.4rem;">Todas</button>
+                                <button class="nav-btn filter-btn" data-filter="IBOVESPA" style="font-size:0.6rem;padding:0.2rem 0.4rem;">Ibov</button>
+                                <button class="nav-btn filter-btn" data-filter="SMALL_CAP" style="font-size:0.6rem;padding:0.2rem 0.4rem;">Small</button>
+                                <button class="nav-btn filter-btn" id="consensus-filter" data-filter="consensus" style="font-size:0.6rem;padding:0.2rem 0.4rem;border-color:var(--warning);color:var(--warning);">★ Cons</button>
             </div>
             <div class="scrollable-table" style="max-height:55vh;">
-                <table style="font-size:0.7rem;">
+                <table style="font-size:0.6rem;table-layout:fixed;">
                     <thead>
                         <tr>
-                            <th style="width:2.5%;">#</th>
-                            <th style="width:5.5%;">Ticker</th>
-                            <th style="width:2.5%;">
-                                <div class="tooltip" style="font-size:0.65rem;">★ <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
-                                    <span class="tooltiptext"><b>Consistência:</b> Quantos horizontes o ativo aparece no TOP 10.</span>
-                                </div>
-                            </th>
-                            <th style="width:7%;">Empresa</th>
-                            <th style="width:5%;">Preço</th>
-                            <th class="col-ret" colspan="2" style="width:11%;">
-                                <div class="tooltip" style="font-size:0.65rem;">3M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
-                                    <span class="tooltiptext">Previsão treinada com 90 pregões.</span>
-                                </div>
-                            </th>
-                            <th class="col-ret" colspan="2" style="width:11%;">
-                                <div class="tooltip" style="font-size:0.65rem;">6M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
-                                    <span class="tooltiptext">Previsão treinada com 180 pregões.</span>
-                                </div>
-                            </th>
-                            <th class="col-ret" colspan="2" style="width:11%;">
-                                <div class="tooltip" style="font-size:0.65rem;">12M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
-                                    <span class="tooltiptext">Previsão treinada com 360 pregões.</span>
-                                </div>
-                            </th>
-                            <th style="width:6%;">
-                                <div class="tooltip" style="font-size:0.65rem;">Cons. <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
-                                    <span class="tooltiptext">Direção predominante entre os 3 horizontes.</span>
-                                </div>
-                            </th>
+                            <th style="width:2%;">#</th>
+                            <th style="width:6%;">Ticker</th>
+                            <th style="width:2.5%;" title="Em quantos horizontes (3M/6M/12M) esta no TOP 10">★</th>
+                            <th style="width:4.5%;">Preço</th>
+                            <th style="width:9%;" title="Retorno 3M - treinado com 90 pregões">3M</th>
+                            <th style="width:9%;" title="Retorno 6M - treinado com 180 pregões">6M</th>
+                            <th style="width:9%;" title="Retorno 12M - treinado com 360 pregões">12M</th>
+                            <th style="width:4%;" title="Direção predominante entre os 3 horizontes">Cons.</th>
                         </tr>
                     </thead>
                     <tbody id="prediction-table-body"></tbody>
@@ -344,21 +323,20 @@
                     <td>${i + 1}</td>
                     <td class="ticker-cell">${s.ticker}</td>
                     <td>${getConsistencyBadge(consis)}</td>
-                    <td style="font-size:0.65rem;color:var(--text-secondary);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name || '-'}</td>
-                    <td style="font-size:0.65rem;">R$${(s.price || 0).toFixed(2)}</td>
+                    <td style="font-size:0.6rem;">R$${(s.price || 0).toFixed(2)}</td>
                 `;
                 HORIZONS.forEach(h => {
                     const v = s[HORIZON_FIELD[h]];
                     const isPos = v >= 0;
-                    const valStr = v != null ? (isPos ? '+' : '') + v.toFixed(2) + '%' : '-';
+                    const valStr = v != null ? (isPos ? '+' : '') + v.toFixed(1) + '%' : '-';
                     html += `
-                        <td colspan="2" style="white-space:nowrap;font-size:0.65rem;">
+                        <td style="white-space:nowrap;font-size:0.6rem;">
                             <span style="color:${isPos ? 'var(--success)' : 'var(--danger)'};font-weight:700;">${valStr}</span>
-                            <span class="status-badge ${sig[h].cls}" style="font-size:0.55rem;padding:0.05rem 0.2rem;margin-left:2px;">${sig[h].label}</span>
+                            <span class="status-badge ${sig[h].cls}" style="font-size:0.5rem;padding:0.05rem 0.15rem;margin-left:2px;">${sig[h].label}</span>
                         </td>
                     `;
                 });
-                html += `<td style="font-size:0.65rem;">${getConsensusDots(s)}</td>`;
+                html += `<td style="font-size:0.6rem;">${getConsensusDots(s)}</td>`;
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
