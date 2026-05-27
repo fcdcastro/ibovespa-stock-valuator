@@ -29,8 +29,6 @@
         .badge-low { background:rgba(255,77,77,0.15); color:var(--danger); border:1px solid var(--danger); }
         .mini-chart-wrap { width:100%; height:120px; position:relative; }
 
-        .col-ret { min-width:85px; }
-        .col-signal { min-width:55px; }
         th .tooltip { font-size:inherit; text-transform:inherit; letter-spacing:inherit; }
     </style>
 </head>
@@ -90,36 +88,36 @@
                 <button class="nav-btn filter-btn" id="consensus-filter" data-filter="consensus" style="font-size:0.7rem;padding:0.25rem 0.6rem;border-color:var(--warning);color:var(--warning);">★ Consenso</button>
             </div>
             <div class="scrollable-table" style="max-height:55vh;">
-                <table>
+                <table style="font-size:0.7rem;">
                     <thead>
                         <tr>
-                            <th style="width:3%;">#</th>
-                            <th style="width:7%;">Ticker</th>
-                            <th style="width:3%;">
-                                <div class="tooltip">★ <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Consistência:</b> Quantos horizontes (3M/6M/12M) o ativo aparece no TOP 10. 3/3 = alta convicção.</span>
+                            <th style="width:2.5%;">#</th>
+                            <th style="width:5.5%;">Ticker</th>
+                            <th style="width:2.5%;">
+                                <div class="tooltip" style="font-size:0.65rem;">★ <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
+                                    <span class="tooltiptext"><b>Consistência:</b> Quantos horizontes o ativo aparece no TOP 10.</span>
                                 </div>
                             </th>
-                            <th style="width:11%;">Empresa</th>
-                            <th style="width:6%;">Preço</th>
-                            <th class="col-ret" colspan="2">
-                                <div class="tooltip">3M <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Retorno 3 Meses:</b> Previsão do melhor modelo treinado com 90 pregões históricos.</span>
+                            <th style="width:7%;">Empresa</th>
+                            <th style="width:5%;">Preço</th>
+                            <th class="col-ret" colspan="2" style="width:11%;">
+                                <div class="tooltip" style="font-size:0.65rem;">3M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
+                                    <span class="tooltiptext">Previsão treinada com 90 pregões.</span>
                                 </div>
                             </th>
-                            <th class="col-ret" colspan="2">
-                                <div class="tooltip">6M <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Retorno 6 Meses:</b> Previsão do melhor modelo treinado com 180 pregões históricos.</span>
+                            <th class="col-ret" colspan="2" style="width:11%;">
+                                <div class="tooltip" style="font-size:0.65rem;">6M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
+                                    <span class="tooltiptext">Previsão treinada com 180 pregões.</span>
                                 </div>
                             </th>
-                            <th class="col-ret" colspan="2">
-                                <div class="tooltip">12M <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Retorno 12 Meses:</b> Previsão do melhor modelo treinado com 360 pregões históricos.</span>
+                            <th class="col-ret" colspan="2" style="width:11%;">
+                                <div class="tooltip" style="font-size:0.65rem;">12M <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
+                                    <span class="tooltiptext">Previsão treinada com 360 pregões.</span>
                                 </div>
                             </th>
-                            <th style="width:8%;">
-                                <div class="tooltip">Consenso <i data-lucide="info" class="info-icon"></i>
-                                    <span class="tooltiptext"><b>Consenso:</b> Direção predominante entre os 3 horizontes. ● = positivo, ○ = neutro, ● = negativo.</span>
+                            <th style="width:6%;">
+                                <div class="tooltip" style="font-size:0.65rem;">Cons. <i data-lucide="info" class="info-icon" style="width:10px;height:10px;"></i>
+                                    <span class="tooltiptext">Direção predominante entre os 3 horizontes.</span>
                                 </div>
                             </th>
                         </tr>
@@ -155,10 +153,10 @@
 
         function getSignal(ret) {
             if (ret == null || isNaN(ret)) return { label: '-', cls: '' };
-            if (ret > 10) return { label: 'Compra Forte', cls: 'status-buy' };
-            if (ret > 0) return { label: 'Compra', cls: 'status-buy' };
-            if (ret > -10) return { label: 'Neutro', cls: 'status-hold' };
-            return { label: 'Venda', cls: 'status-sell' };
+            if (ret > 10) return { label: 'CF', cls: 'status-buy' };
+            if (ret > 0) return { label: 'C', cls: 'status-buy' };
+            if (ret > -10) return { label: 'N', cls: 'status-hold' };
+            return { label: 'V', cls: 'status-sell' };
         }
 
         function getConsensusDots(s) {
@@ -346,21 +344,21 @@
                     <td>${i + 1}</td>
                     <td class="ticker-cell">${s.ticker}</td>
                     <td>${getConsistencyBadge(consis)}</td>
-                    <td style="font-size:0.75rem;color:var(--text-secondary);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name || '-'}</td>
-                    <td>R$${(s.price || 0).toFixed(2)}</td>
+                    <td style="font-size:0.65rem;color:var(--text-secondary);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name || '-'}</td>
+                    <td style="font-size:0.65rem;">R$${(s.price || 0).toFixed(2)}</td>
                 `;
                 HORIZONS.forEach(h => {
                     const v = s[HORIZON_FIELD[h]];
                     const isPos = v >= 0;
                     const valStr = v != null ? (isPos ? '+' : '') + v.toFixed(2) + '%' : '-';
                     html += `
-                        <td colspan="2" style="white-space:nowrap;">
+                        <td colspan="2" style="white-space:nowrap;font-size:0.65rem;">
                             <span style="color:${isPos ? 'var(--success)' : 'var(--danger)'};font-weight:700;">${valStr}</span>
-                            <span class="status-badge ${sig[h].cls}" style="font-size:0.6rem;padding:0.1rem 0.3rem;margin-left:4px;">${sig[h].label}</span>
+                            <span class="status-badge ${sig[h].cls}" style="font-size:0.55rem;padding:0.05rem 0.2rem;margin-left:2px;">${sig[h].label}</span>
                         </td>
                     `;
                 });
-                html += `<td>${getConsensusDots(s)}</td>`;
+                html += `<td style="font-size:0.65rem;">${getConsensusDots(s)}</td>`;
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
