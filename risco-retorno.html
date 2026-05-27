@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risco x Retorno — Le Gran</title>
+    <meta name="description" content="Análise de Risco x Retorno das ações da B3 com base na divergência entre modelos preditivos.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .rr-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0 10px 1rem;
+        }
+        @media (max-width: 900px) {
+            .rr-layout { grid-template-columns: 1fr; }
+        }
+        .rr-card {
+            background: #0d0d0d;
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            padding: 1rem;
+        }
+        .rr-card h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chart-container { position: relative; height: 400px; }
+
+        .rr-table-wrap {
+            overflow-y: auto;
+            max-height: 55vh;
+        }
+        .rr-table { width: 100%; border-collapse: collapse; }
+        .rr-table th {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            padding: 0.3rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            background: #0d0d0d;
+            position: sticky;
+            top: 0;
+        }
+        .rr-table td {
+            font-size: 0.78rem;
+            padding: 0.35rem 0.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            white-space: nowrap;
+        }
+        .rr-table tr:hover td { background: rgba(0,255,65,0.03); }
+        .rr-score {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+        .rr-score.A { background: rgba(0,255,65,0.2); color: var(--success); }
+        .rr-score.B { background: rgba(0,255,65,0.1);  color: #88ff88; }
+        .rr-score.C { background: rgba(255,204,0,0.15); color: var(--warning); }
+        .rr-score.D { background: rgba(255,77,77,0.15); color: var(--danger); }
+        .rr-score.E { background: rgba(255,77,77,0.3);  color: #ff4444; }
+
+        .risk-bar-wrap { background: #1a1a1a; border-radius: 3px; height: 4px; width: 60px; display: inline-block; vertical-align: middle; margin-left: 0.3rem; }
+        .risk-bar { height: 4px; border-radius: 3px; }
+        .risk-bar.low  { background: var(--success); }
+        .risk-bar.med  { background: var(--warning); }
+        .risk-bar.high { background: var(--danger); }
+
+        .filter-chip {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .filter-chip:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .filter-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); font-weight: 700; }
+        .filter-chip[data-filter="ibov"].active { background: #00ff41; color: #050505; }
+        .filter-chip[data-filter="small"].active { background: #ffaa00; color: #050505; }
+        .horizon-chip { min-width: 42px; text-align: center; }
+        .horizon-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); }
+        .horizon-label { font-size: 0.65rem; color: var(--text-secondary); margin-right: 0.3rem; }
+    </style>
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i data-lucide="activity" class="logo-icon"></i>
+                <span>Le Gran — <span>Risco x Retorno</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn" onclick="window.location.href='index.html'">Análise Atual</button>
+                <button class="nav-btn" onclick="window.location.href='preditiva.html'">Análise Preditiva</button>
+                <button class="nav-btn" onclick="window.location.href='comparacao.html'">Comparação de Modelos</button>
+                <button class="nav-btn" onclick="window.location.href='correlacao.html'">Correlação</button>
+                <button class="nav-btn active">Risco x Retorno</button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div id="error-banner" class="error-banner hidden" style="margin: 10px;">
+            <i data-lucide="alert-triangle"></i>
+            <span id="error-message">Erro ao conectar com o servidor.</span>
+            <button class="error-close" onclick="this.parentElement.classList.add('hidden')">&times;</button>
+        </div>
+
+        <section class="controls-row" style="margin-bottom:1rem;">
+            <div class="stats-grid" id="summary-stats">
+                <div class="stat-card">
+                    <span class="stat-label">Ativos Analisados</span>
+                    <span class="stat-value" id="stat-total">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Melhor Relação Risco/Retorno</span>
+                    <span class="stat-value highlight" id="stat-best">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Menor Risco</span>
+                    <span class="stat-value" id="stat-lowrisk">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Maior Retorno Esperado</span>
+                    <span class="stat-value" id="stat-highest">-</span>
+                </div>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; padding:0 10px;">
+                <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">Todos</button>
+                <button class="filter-chip" data-filter="ibov" onclick="setFilter('ibov')">Ibovespa</button>
+                <button class="filter-chip" data-filter="small" onclick="setFilter('small')">Small/Mid Caps</button>
+                <span style="flex:1;min-width:10px"></span>
+                <span class="horizon-label">Horizonte:</span>
+                <button class="filter-chip horizon-chip active" data-horizon="3m" onclick="setHorizon('3m')">3M</button>
+                <button class="filter-chip horizon-chip" data-horizon="6m" onclick="setHorizon('6m')">6M</button>
+                <button class="filter-chip horizon-chip" data-horizon="12m" onclick="setHorizon('12m')">12M</button>
+            </div>
+        </section>
+
+        <div class="rr-layout">
+            <div class="rr-card">
+                <h3><i data-lucide="scatter-chart"></i> Risco (Disperção dos Modelos) x Retorno Esperado</h3>
+                <div class="chart-container">
+                    <canvas id="scatter-chart"></canvas>
+                </div>
+            </div>
+            <div class="rr-card">
+                <h3><i data-lucide="list"></i> Tabela Risco x Retorno</h3>
+                <div class="rr-table-wrap">
+                    <table class="rr-table" id="rr-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Retorno</th>
+                                <th>Risco</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rr-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="data.js"></script>
+    <script>
+        const IBOV_TICKERS = [
+            "PETR4","VALE3","ITUB4","BBDC4","BBAS3","ABEV3","B3SA3","WEGE3","SUZB3","RENT3",
+            "LREN3","JBSS3","RADL3","EQTL3","ELET3","ELET6","HAPV3","PRIO3","RDOR3","RAIL3",
+            "SBSP3","VIVT3","BBSE3","CPLE6","CMIG4","CCRO3","CSNA3","GGBR4","USIM5","BRFS3",
+            "TOTS3","ASAI3","NTCO3","KLBN11","TIMS3","BPAC11","CSAN3","MGLU3","EGIE3","CPFE3",
+            "CYRE3","MULT3","VBBR3","CRFB3","ENGI11","TAEE11","TRPL4","ALOS3","IGTI11"
+        ];
+        function classifyTicker(tkr) {
+            return IBOV_TICKERS.includes(tkr) ? 'ibov' : 'small';
+        }
+
+        let currentFilter = 'all';
+        let currentHorizon = '3m';
+        let stocks = [], modelInfo = null;
+        let scatterChartInstance = null;
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-chip[data-filter]').forEach(el => {
+                el.classList.toggle('active', el.dataset.filter === f);
+            });
+            renderAll();
+        }
+
+        function setHorizon(h) {
+            currentHorizon = h;
+            document.querySelectorAll('.horizon-chip').forEach(el => {
+                el.classList.toggle('active', el.dataset.horizon === h);
+            });
+            renderAll();
+        }
+
+        function getPerTicker(h) {
+            return (modelInfo.per_ticker_predictions_by_horizon && modelInfo.per_ticker_predictions_by_horizon[h])
+                || modelInfo.per_ticker_predictions || {};
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
+
+            function showError(msg) {
+                if (errorMessage) errorMessage.textContent = msg;
+                if (errorBanner) errorBanner.classList.remove('hidden');
+            }
+            function hideError() {
+                if (errorBanner) errorBanner.classList.add('hidden');
+            }
+
+            try {
+                let raw;
+                try {
+                    const resp = await fetch('http://localhost:5000/api/valuation');
+                    if (resp.ok) {
+                        raw = await resp.json();
+                    } else {
+                        throw new Error('Servidor retornou erro');
+                    }
+                } catch {
+                    if (window.__STOCK_DATA__) {
+                        raw = window.__STOCK_DATA__;
+                        showError('Servidor offline. Exibindo dados do cache local.');
+                    } else {
+                        throw new Error('Servidor offline e nenhum cache local disponivel.');
+                    }
+                }
+                hideError();
+                stocks    = raw.stocks    || raw;
+                modelInfo = raw.model_info || null;
+            } catch(e) {
+                console.error('Erro ao carregar dados:', e);
+                showError('Erro ao carregar dados. Execute o pipeline (python server.py) primeiro.');
+            }
+
+            if (!modelInfo) {
+                document.body.insertAdjacentHTML('beforeend',
+                    '<p style="color:var(--warning);padding:2rem;text-align:center;">Dados indisponiveis.</p>');
+                lucide.createIcons();
+                return;
+            }
+
+            renderAll();
+            lucide.createIcons();
+        });
+
+        function renderAll() {
+            const h = currentHorizon;
+            const perTicker = getPerTicker(h);
+
+            // Calcular risco (desvio padrao das predicoes) e retorno (media) para cada ticker
+            const dataPoints = [];
+            Object.entries(perTicker).forEach(([tkr, preds]) => {
+                const vals = Object.values(preds).filter(v => typeof v === 'number' && isFinite(v));
+                if (vals.length < 2) return;
+                const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
+                const variance = vals.reduce((sum, v) => sum + (v - mean) ** 2, 0) / vals.length;
+                const risk = Math.sqrt(variance);
+                const cat = classifyTicker(tkr);
+                dataPoints.push({ ticker: tkr, retorno: mean, risco: risk, category: cat });
+            });
+
+            // Filtrar
+            const filtered = currentFilter === 'all'
+                ? dataPoints
+                : dataPoints.filter(d => d.category === currentFilter);
+
+            renderChart(filtered);
+            renderTable(filtered);
+            renderStats(filtered);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('scatter-chart').getContext('2d');
+            if (scatterChartInstance) scatterChartInstance.destroy();
+
+            const ibovData = data.filter(d => d.category === 'ibov');
+            const smallData = data.filter(d => d.category === 'small');
+
+            scatterChartInstance = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Ibovespa',
+                            data: ibovData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker })),
+                            backgroundColor: 'rgba(0,255,65,0.6)',
+                            borderColor: 'rgba(0,255,65,0.9)',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Small/Mid Caps',
+                            data: smallData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker })),
+                            backgroundColor: 'rgba(255,170,0,0.6)',
+                            borderColor: 'rgba(255,170,0,0.9)',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#4dff79', font: { size: 10 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0d0d0d',
+                            borderColor: 'var(--glass-border)',
+                            borderWidth: 1,
+                            titleColor: '#00ff41',
+                            bodyColor: '#4dff79',
+                            callbacks: {
+                                title: items => items[0].raw.ticker,
+                                label: ctx => {
+                                    const d = ctx.raw;
+                                    return [
+                                        `Retorno: ${d.y >= 0 ? '+' : ''}${d.y.toFixed(2)}%`,
+                                        `Risco: ${d.x.toFixed(2)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Risco (Desvio Padrão dos Modelos)', color: '#4dff79', font: { size: 11 } },
+                            grid: { color: '#1a1a1a' },
+                            ticks: { color: '#4dff79', font: { size: 9 } }
+                        },
+                        y: {
+                            title: { display: true, text: 'Retorno Esperado Médio (%)', color: '#4dff79', font: { size: 11 } },
+                            grid: { color: '#1a1a1a' },
+                            ticks: {
+                                color: '#4dff79', font: { size: 9 },
+                                callback: v => v >= 0 ? `+${v.toFixed(1)}%` : `${v.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function scoreLabel(r) {
+            if (r >= 2)  return 'A';
+            if (r >= 1)  return 'B';
+            if (r >= 0)  return 'C';
+            if (r >= -1) return 'D';
+            return 'E';
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('rr-table-body');
+            tbody.innerHTML = '';
+
+            // Calcular score: retorno / risco (se risco > 0)
+            const scored = data.map(d => ({
+                ...d,
+                rr: d.risco > 0 ? d.retorno / d.risco : d.retorno
+            })).sort((a, b) => b.rr - a.rr);
+
+            scored.forEach(d => {
+                const tr = document.createElement('tr');
+                const score = scoreLabel(d.rr);
+                const retStr = d.retorno >= 0 ? `+${d.retorno.toFixed(2)}%` : `${d.retorno.toFixed(2)}%`;
+                const riskPct = Math.min(d.risco / 30 * 100, 100);
+                const riskClass = d.risco < 8 ? 'low' : d.risco < 18 ? 'med' : 'high';
+
+                tr.innerHTML = `
+                    <td style="font-weight:700;color:var(--accent-color)">${d.ticker}</td>
+                    <td style="color:${d.retorno >= 0 ? 'var(--success)' : 'var(--danger)'}">${retStr}</td>
+                    <td>
+                        ${d.risco.toFixed(2)}
+                        <div class="risk-bar-wrap"><div class="risk-bar ${riskClass}" style="width:${riskPct}%"></div></div>
+                    </td>
+                    <td><span class="rr-score ${score}">${score}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderStats(data) {
+            document.getElementById('stat-total').textContent = data.length;
+            if (data.length === 0) return;
+
+            const scored = data.map(d => ({
+                ...d,
+                rr: d.risco > 0 ? d.retorno / d.risco : d.retorno
+            })).sort((a, b) => b.rr - a.rr);
+
+            document.getElementById('stat-best').textContent = scored[0].ticker;
+            const lowestRisk = data.reduce((a,b) => a.risco < b.risco ? a : b);
+            document.getElementById('stat-lowrisk').textContent = lowestRisk.ticker;
+            const highestRet = data.reduce((a,b) => a.retorno > b.retorno ? a : b);
+            document.getElementById('stat-highest').textContent = highestRet.ticker;
+        }
+    </script>
+</body>
+</html>
