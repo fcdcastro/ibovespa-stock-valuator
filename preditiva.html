@@ -40,8 +40,14 @@
 
         <!-- Prediction Cards - Top 5 -->
         <section class="prediction-section" id="prediction-section">
-            <div class="section-header">
-                <h2><i data-lucide="trophy"></i> TOP 5 - Maior Retorno Esperado (3 Meses)</h2>
+            <div class="section-header" style="flex-wrap:wrap; gap:0.5rem;">
+                <h2><i data-lucide="trophy"></i> TOP 5 — Maior Retorno Esperado (<span id="period-label">6</span> Meses)</h2>
+                <div class="filter-bar" style="padding:0;border:none;display:flex;gap:4px;align-items:center;">
+                    <span style="color:var(--text-secondary);font-size:0.7rem;text-transform:uppercase;font-weight:600;margin-right:4px;">Previsão:</span>
+                    <button class="nav-btn period-btn" data-period="3">3m</button>
+                    <button class="nav-btn period-btn active" data-period="6">6m</button>
+                    <button class="nav-btn period-btn" data-period="12">12m</button>
+                </div>
             </div>
             <div class="prediction-cards" id="prediction-cards-container">
                 <!-- Cards injected by JS -->
@@ -69,16 +75,36 @@
                             <th style="width:10%;">Ticker</th>
                             <th style="width:12%;">Preço Atual</th>
                             <th style="width:12%;">
-                                <div class="tooltip">Retorno Esperado <i data-lucide="info" class="info-icon"></i>
+                                <div class="tooltip" id="retorno-tooltip">Retorno Esperado <i data-lucide="info" class="info-icon"></i>
                                     <span class="tooltiptext"><b>Retorno Esperado:</b> Estimativa do modelo de IA para a
-                                        valorização nos próximos 3 meses, baseada nos fundamentos atuais.</span>
+                                        valorização nos próximos 6 meses, baseada nos fundamentos atuais.</span>
                                 </div>
                             </th>
-                            <th style="width:10%;">P/L</th>
-                            <th style="width:10%;">P/VP</th>
-                            <th style="width:10%;">ROE</th>
-                            <th style="width:10%;">Div. Yield</th>
-                            <th style="width:10%;">Margem Líq.</th>
+                            <th style="width:10%;">
+                                <div class="tooltip">P/L <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Preço/Lucro:</b> Indica quantos anos de lucro seriam necessários para recuperar o investimento. Quanto menor, mais barata a ação em relação ao lucro que gera.</span>
+                                </div>
+                            </th>
+                            <th style="width:10%;">
+                                <div class="tooltip">P/VP <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Preço/Valor Patrimonial:</b> Compara o preço da ação com seu patrimônio líquido por ação. P/VP &lt; 1 sugere que a ação pode estar subvalorizada.</span>
+                                </div>
+                            </th>
+                            <th style="width:10%;">
+                                <div class="tooltip">ROE <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Return on Equity:</b> Mede a rentabilidade do patrimônio líquido da empresa. Quanto maior, mais eficiente a empresa é em gerar lucro com seu capital próprio.</span>
+                                </div>
+                            </th>
+                            <th style="width:10%;">
+                                <div class="tooltip">Div. Yield <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Dividend Yield:</b> Rendimento gerado por dividendos nos últimos 12 meses em relação ao preço atual da ação. Indica o retorno em proventos.</span>
+                                </div>
+                            </th>
+                            <th style="width:10%;">
+                                <div class="tooltip">Margem Líq. <i data-lucide="info" class="info-icon"></i>
+                                    <span class="tooltiptext"><b>Margem Líquida:</b> Percentual do faturamento que se converte em lucro líquido. Quanto maior, mais lucrativa é a empresa em relação à sua receita.</span>
+                                </div>
+                            </th>
                             <th style="width:11%;">Sinal</th>
                         </tr>
                     </thead>
@@ -134,12 +160,29 @@
                 }
 
                 let currentFilter = 'all';
+                let currentPeriod = 6;
+
+                function periodLabel(p) {
+                    return p === 12 ? '12' : p === 3 ? '3' : '6';
+                }
 
                 function applyFilters() {
                     let filtered = stocks;
 
                     if (currentFilter !== 'all') {
                         filtered = filtered.filter(stock => stock.category === currentFilter);
+                    }
+
+                    const pLabel = periodLabel(currentPeriod);
+
+                    // Update period label in header and tooltip
+                    document.getElementById('period-label').textContent = pLabel;
+                    document.querySelectorAll('.prediction-label').forEach(el => {
+                        el.textContent = `Retorno Esperado (${pLabel}m)`;
+                    });
+                    const retTooltip = document.querySelector('#retorno-tooltip .tooltiptext');
+                    if (retTooltip) {
+                        retTooltip.innerHTML = `<b>Retorno Esperado:</b> Estimativa do modelo de IA para a valorização nos pr\u00f3ximos ${pLabel} meses, baseada nos fundamentos atuais.`;
                     }
 
                     // Sort by expected_return descending
@@ -157,7 +200,7 @@
                         card.innerHTML = `
                         <div class="rank">#${i + 1}</div>
                         <div class="ticker">${stock.ticker}</div>
-                        <div class="prediction-label">Retorno Esperado (3m)</div>
+                        <div class="prediction-label">Retorno Esperado (${pLabel}m)</div>
                         <div class="prediction-value" style="color: ${isPositive ? 'var(--success)' : 'var(--danger)'}">
                             ${isPositive ? '+' : ''}${stock.expected_return.toFixed(2)}%
                         </div>
@@ -197,7 +240,6 @@
                     `;
                         tbody.appendChild(row);
                     });
-
                 }
 
                 // Filter Buttons
@@ -206,6 +248,16 @@
                         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                         e.target.classList.add('active');
                         currentFilter = e.target.getAttribute('data-filter');
+                        applyFilters();
+                    });
+                });
+
+                // Period Buttons
+                document.querySelectorAll('.period-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        currentPeriod = parseInt(e.target.getAttribute('data-period'));
                         applyFilters();
                     });
                 });
