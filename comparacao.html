@@ -13,7 +13,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* ── Layout específico desta página ── */
         .cmp-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -29,7 +28,7 @@
             border-radius: 4px;
             padding: 1rem;
         }
-        .cmp-card h3 {
+        .cmp-card h3, .ticker-detail-panel h3 {
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -39,7 +38,6 @@
             align-items: center;
             gap: 0.4rem;
         }
-        /* Ranking table */
         .rank-table { width: 100%; border-collapse: collapse; }
         .rank-table th {
             font-size: 0.7rem;
@@ -59,6 +57,13 @@
             white-space: nowrap;
         }
         .rank-table tr.winner td { color: var(--accent-color); font-weight: 700; }
+        .rank-table tr.rank-1 td { background: rgba(255,215,0,0.08); }
+        .rank-table tr.rank-2 td { background: rgba(192,192,192,0.06); }
+        .rank-table tr.rank-3 td { background: rgba(205,127,50,0.05); }
+        .rank-pos { font-weight: 800; font-size: 0.9rem; }
+        .rank-pos.gold   { color: #ffd700; }
+        .rank-pos.silver { color: #c0c0c0; }
+        .rank-pos.bronze { color: #cd7f32; }
         .type-badge {
             padding: 0.15rem 0.4rem;
             border-radius: 3px;
@@ -72,8 +77,6 @@
         .r2-bar-wrap { background: #050505; border-radius: 3px; height: 6px; margin-top: 3px; }
         .r2-bar      { height: 6px; border-radius: 3px; background: var(--accent-color); transition: width 0.6s ease; }
         .r2-bar.neg  { background: var(--danger); }
-
-        /* Heatmap */
         .heatmap-wrap { overflow-x: auto; }
         .heatmap-table { border-collapse: collapse; min-width: 500px; width: 100%; }
         .heatmap-table th {
@@ -100,23 +103,12 @@
             color: var(--accent-color);
             background: #050505;
         }
-        /* Ticker detail panel */
         .ticker-detail-panel {
             background: #050505;
             border: 1px solid var(--glass-border);
             border-radius: 4px;
             padding: 1rem;
             margin: 0 10px 1rem;
-        }
-        .ticker-detail-panel h3 {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-color);
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
         }
         .detail-bar-row {
             display: flex;
@@ -166,6 +158,9 @@
         .filter-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); font-weight: 700; }
         .filter-chip[data-filter="ibov"].active { background: #00ff41; color: #050505; }
         .filter-chip[data-filter="small"].active { background: #ffaa00; color: #050505; }
+        .horizon-chip { min-width: 42px; text-align: center; }
+        .horizon-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); }
+        .horizon-label { font-size: 0.65rem; color: var(--text-secondary); margin-right: 0.3rem; }
     </style>
 </head>
 
@@ -221,6 +216,11 @@
                 <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">Todos</button>
                 <button class="filter-chip" data-filter="ibov" onclick="setFilter('ibov')">Ibovespa</button>
                 <button class="filter-chip" data-filter="small" onclick="setFilter('small')">Small/Mid Caps</button>
+                <span style="flex:1;min-width:10px"></span>
+                <span class="horizon-label">Retorno:</span>
+                <button class="filter-chip horizon-chip active" data-horizon="3m" onclick="setHorizon('3m')">3M</button>
+                <button class="filter-chip horizon-chip" data-horizon="6m" onclick="setHorizon('6m')">6M</button>
+                <button class="filter-chip horizon-chip" data-horizon="12m" onclick="setHorizon('12m')">12M</button>
             </div>
         </section>
 
@@ -278,7 +278,6 @@
 
     <script src="data.js"></script>
     <script>
-        // ── Classifica��o Ibovespa / Small Cap ────────────────────────────
         const IBOV_TICKERS = [
             "PETR4","VALE3","ITUB4","BBDC4","BBAS3","ABEV3","B3SA3","WEGE3","SUZB3","RENT3",
             "LREN3","JBSS3","RADL3","EQTL3","ELET3","ELET6","HAPV3","PRIO3","RDOR3","RAIL3",
@@ -291,10 +290,15 @@
         }
 
         let currentFilter = 'all';
+        let currentHorizon = '3m';
+        let stocks = [], modelInfo = null;
+        let r2ChartInstance = null;
+
+        const HORIZON_LABELS = { '3m': '3 Meses', '6m': '6 Meses', '12m': '12 Meses' };
 
         function setFilter(f) {
             currentFilter = f;
-            document.querySelectorAll('.filter-chip').forEach(el => {
+            document.querySelectorAll('.filter-chip[data-filter]').forEach(el => {
                 el.classList.toggle('active', el.dataset.filter === f);
             });
             applyFilter();
@@ -311,231 +315,297 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-        // ── Carregar dados ──────────────────────────────────────────────────
-        let stocks = [], modelInfo = null;
-        const errorBanner = document.getElementById('error-banner');
-        const errorMessage = document.getElementById('error-message');
-
-        function showError(msg) {
-            if (errorMessage) errorMessage.textContent = msg;
-            if (errorBanner) errorBanner.classList.remove('hidden');
-        }
-
-        function hideError() {
-            if (errorBanner) errorBanner.classList.add('hidden');
-        }
-
-        try {
-            let raw;
-            try {
-                const resp = await fetch('http://localhost:5000/api/valuation');
-                if (resp.ok) {
-                    raw = await resp.json();
-                } else {
-                    throw new Error('Servidor retornou erro');
-                }
-            } catch {
-                if (window.__STOCK_DATA__) {
-                    raw = window.__STOCK_DATA__;
-                    showError('Servidor offline. Exibindo dados do cache local.');
-                } else {
-                    throw new Error('Servidor offline e nenhum cache local disponível.');
-                }
-            }
-            hideError();
-            stocks    = raw.stocks    || raw;
-            modelInfo = raw.model_info || null;
-        } catch(e) {
-            console.error('Erro ao carregar dados:', e);
-            showError('Erro ao carregar dados. Execute o pipeline (python server.py) primeiro.');
-        }
-
-        if (!modelInfo) {
-            document.body.insertAdjacentHTML('beforeend',
-                '<p style="color:var(--warning);padding:2rem;text-align:center;">Dados ainda não disponíveis. Execute o pipeline (python main.py) para gerar o data.json.</p>');
-            lucide.createIcons();
-            return;
-        }
-
-        const allModels   = modelInfo.all_models || [];
-        const perTicker   = modelInfo.per_ticker_predictions || {};
-        const chosenModel = modelInfo.chosen_model || '';
-        const tickers     = Object.keys(perTicker);
-        const modelNames  = allModels.map(m => m.name);
-
-        // ── Estatísticas rápidas ───────────────────────────────────────────
-        document.getElementById('stat-total-models').textContent = allModels.length;
-        document.getElementById('stat-winner').textContent       = chosenModel || '-';
-        document.getElementById('stat-tickers').textContent      = tickers.length;
-
-        const validR2  = allModels.filter(m => m.r2 > -90);
-        const validMAE = allModels.filter(m => m.mae < 900);
-        if (validR2.length)  document.getElementById('stat-best-r2').textContent  = validR2[0].r2.toFixed(4);
-        if (validMAE.length) {
-            const minMAE = validMAE.reduce((a,b) => a.mae < b.mae ? a : b);
-            document.getElementById('stat-best-mae').textContent = minMAE.mae.toFixed(2) + '%';
-        }
-
-        // ── Ranking de modelos ─────────────────────────────────────────────
-        const tbody = document.getElementById('rank-table-body');
-        // Contar vitórias (quantos tickers cada modelo teve maior retorno previsto)
-        const wins = {};
-        allModels.forEach(m => wins[m.name] = 0);
-        tickers.forEach(tkr => {
-            const preds = perTicker[tkr] || {};
-            let bestModel = null, bestVal = -Infinity;
-            Object.entries(preds).forEach(([mName, val]) => {
-                if (val > bestVal) { bestVal = val; bestModel = mName; }
+        function setHorizon(h) {
+            currentHorizon = h;
+            document.querySelectorAll('.horizon-chip').forEach(el => {
+                el.classList.toggle('active', el.dataset.horizon === h);
             });
-            if (bestModel) wins[bestModel] = (wins[bestModel] || 0) + 1;
-        });
-        const maxWins = Math.max(...Object.values(wins), 1);
+            renderAll();
+        }
 
-        allModels.forEach((m, i) => {
-            const isWinner = m.name === chosenModel;
-            const r2Valid  = m.r2 > -90;
-            const r2Pct    = r2Valid ? Math.min(Math.max(m.r2 * 100, 0), 100) : 0;
-            const w        = wins[m.name] || 0;
-            const wPct     = (w / maxWins * 100).toFixed(0);
-            const typeCls  = m.type === 'fundamentalista' ? 'type-fund'
-                           : m.type === 'hibrido'         ? 'type-hyb'
-                           :                                'type-ts';
-            const typeLabel = m.type === 'fundamentalista' ? 'Fundamentalista'
-                            : m.type === 'hibrido'         ? 'Hibrído'
-                            : 'Série Temporal';
-            const tr = document.createElement('tr');
-            if (isWinner) tr.className = 'winner';
-            tr.innerHTML = `
-                <td>${i + 1}${isWinner ? ' 🏆' : ''}</td>
-                <td>${m.name}</td>
-                <td><span class="type-badge ${typeCls}">${typeLabel}</span></td>
-                <td>
-                    <span style="color:${r2Valid && m.r2 >= 0 ? 'var(--success)' : 'var(--danger)'}">
-                        ${r2Valid ? m.r2.toFixed(4) : 'N/A'}
-                    </span>
-                    <div class="r2-bar-wrap">
-                        <div class="r2-bar ${m.r2 < 0 ? 'neg' : ''}" style="width:${r2Pct}%"></div>
-                    </div>
-                </td>
-                <td style="color:var(--text-secondary)">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</td>
-                <td>
-                    <span style="font-weight:700;color:${w > 0 ? 'var(--accent-color)' : 'var(--text-secondary)'}">${w}</span>
-                    <div class="r2-bar-wrap"><div class="r2-bar" style="width:${wPct}%"></div></div>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        function getModels(h) {
+            return (modelInfo.all_models_by_horizon && modelInfo.all_models_by_horizon[h])
+                || modelInfo.all_models || [];
+        }
+
+        function getPerTicker(h) {
+            return (modelInfo.per_ticker_predictions_by_horizon && modelInfo.per_ticker_predictions_by_horizon[h])
+                || modelInfo.per_ticker_predictions || {};
+        }
+
+        function getChosen(h) {
+            return (modelInfo.horizon_best && modelInfo.horizon_best[h])
+                || modelInfo.chosen_model || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
+
+            function showError(msg) {
+                if (errorMessage) errorMessage.textContent = msg;
+                if (errorBanner) errorBanner.classList.remove('hidden');
+            }
+
+            function hideError() {
+                if (errorBanner) errorBanner.classList.add('hidden');
+            }
+
+            try {
+                let raw;
+                try {
+                    const resp = await fetch('http://localhost:5000/api/valuation');
+                    if (resp.ok) {
+                        raw = await resp.json();
+                    } else {
+                        throw new Error('Servidor retornou erro');
+                    }
+                } catch {
+                    if (window.__STOCK_DATA__) {
+                        raw = window.__STOCK_DATA__;
+                        showError('Servidor offline. Exibindo dados do cache local.');
+                    } else {
+                        throw new Error('Servidor offline e nenhum cache local disponível.');
+                    }
+                }
+                hideError();
+                stocks    = raw.stocks    || raw;
+                modelInfo = raw.model_info || null;
+            } catch(e) {
+                console.error('Erro ao carregar dados:', e);
+                showError('Erro ao carregar dados. Execute o pipeline (python server.py) primeiro.');
+            }
+
+            if (!modelInfo) {
+                document.body.insertAdjacentHTML('beforeend',
+                    '<p style="color:var(--warning);padding:2rem;text-align:center;">Dados ainda não disponiveis. Execute o pipeline (python main.py) para gerar o data.json.</p>');
+                lucide.createIcons();
+                return;
+            }
+
+            renderAll();
+            lucide.createIcons();
         });
 
-        // ── Gráfico de barras horizontal R² ───────────────────────────────
-        const chartLabels = allModels.map(m => m.name);
-        const chartData   = allModels.map(m => m.r2 > -90 ? m.r2 : null);
-        const chartColors = allModels.map(m =>
-            m.name === chosenModel
-                ? 'rgba(0,255,65,0.85)'
-                : m.r2 >= 0
-                    ? 'rgba(0,255,65,0.35)'
-                    : 'rgba(255,77,77,0.4)'
-        );
-        const ctx = document.getElementById('r2-chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    label: 'R² (Confiabilidade)',
-                    data:  chartData,
-                    backgroundColor: chartColors,
-                    borderColor: chartColors.map(c => c.replace('0.85','1').replace('0.35','0.8').replace('0.4','0.8')),
-                    borderWidth: 1,
-                    borderRadius: 3
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0d0d0d',
-                        borderColor: 'var(--glass-border)',
+        function renderAll() {
+            const h = currentHorizon;
+            const models = getModels(h);
+            const perTicker = getPerTicker(h);
+            const chosen = getChosen(h);
+
+            renderStats(models, perTicker, chosen);
+            renderRanking(models, perTicker, chosen);
+            renderChart(models, chosen);
+            renderHeatmap(perTicker, chosen);
+        }
+
+        function renderStats(models, perTicker, chosen) {
+            document.getElementById('stat-total-models').textContent = models.length;
+            document.getElementById('stat-winner').textContent       = chosen || '-';
+            document.getElementById('stat-tickers').textContent      = Object.keys(perTicker).length;
+
+            const validR2  = models.filter(m => m.r2 > -90);
+            const validMAE = models.filter(m => m.mae < 900);
+            if (validR2.length)
+                document.getElementById('stat-best-r2').textContent = validR2[0].r2.toFixed(4);
+            if (validMAE.length) {
+                const minMAE = validMAE.reduce((a,b) => a.mae < b.mae ? a : b);
+                document.getElementById('stat-best-mae').textContent = minMAE.mae.toFixed(2) + '%';
+            }
+
+            const hLabel = document.querySelectorAll('.stats-grid .stat-card')[0];
+            // already fine
+        }
+
+        function renderRanking(models, perTicker, chosen) {
+            const tbody = document.getElementById('rank-table-body');
+            tbody.innerHTML = '';
+
+            const tickers = Object.keys(perTicker);
+            const wins = {};
+            models.forEach(m => wins[m.name] = 0);
+            tickers.forEach(tkr => {
+                const preds = perTicker[tkr] || {};
+                let bestModel = null, bestVal = -Infinity;
+                Object.entries(preds).forEach(([mName, val]) => {
+                    if (val > bestVal) { bestVal = val; bestModel = mName; }
+                });
+                if (bestModel) wins[bestModel] = (wins[bestModel] || 0) + 1;
+            });
+            const maxWins = Math.max(...Object.values(wins), 1);
+
+            const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+            const rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+
+            models.forEach((m, i) => {
+                const isWinner = m.name === chosen;
+                const rank = i + 1;
+                const r2Valid  = m.r2 > -90;
+                const r2Pct    = r2Valid ? Math.min(Math.max(m.r2 * 100, 0), 100) : 0;
+                const w        = wins[m.name] || 0;
+                const wPct     = (w / maxWins * 100).toFixed(0);
+                const typeCls  = m.type === 'fundamentalista' ? 'type-fund'
+                               : m.type === 'hibrido'         ? 'type-hyb'
+                               :                                'type-ts';
+                const typeLabel = m.type === 'fundamentalista' ? 'Fundamentalista'
+                                : m.type === 'hibrido'         ? 'Hibrido'
+                                : 'Serie Temporal';
+
+                const tr = document.createElement('tr');
+                if (isWinner) tr.className = 'winner';
+                if (rank <= 3) tr.classList.add(rankClasses[rank-1]);
+
+                let posHtml;
+                if (rank === 1) {
+                    posHtml = `<span class="rank-pos gold">${medals[0]} 1</span>`;
+                } else if (rank === 2) {
+                    posHtml = `<span class="rank-pos silver">${medals[1]} 2</span>`;
+                } else if (rank === 3) {
+                    posHtml = `<span class="rank-pos bronze">${medals[2]} 3</span>`;
+                } else {
+                    posHtml = `<span style="color:var(--text-secondary)">${rank}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td>${posHtml}</td>
+                    <td>${m.name}${isWinner ? ' \u{1F3C6}' : ''}</td>
+                    <td><span class="type-badge ${typeCls}">${typeLabel}</span></td>
+                    <td>
+                        <span style="color:${r2Valid && m.r2 >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                            ${r2Valid ? m.r2.toFixed(4) : 'N/A'}
+                        </span>
+                        <div class="r2-bar-wrap">
+                            <div class="r2-bar ${m.r2 < 0 ? 'neg' : ''}" style="width:${r2Pct}%"></div>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-secondary)">${m.mae < 900 ? m.mae.toFixed(2) + '%' : 'N/A'}</td>
+                    <td>
+                        <span style="font-weight:700;color:${w > 0 ? 'var(--accent-color)' : 'var(--text-secondary)'}">${w}</span>
+                        <div class="r2-bar-wrap"><div class="r2-bar" style="width:${wPct}%"></div></div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderChart(models, chosen) {
+            const ctx = document.getElementById('r2-chart').getContext('2d');
+            if (r2ChartInstance) r2ChartInstance.destroy();
+
+            const labels = models.map(m => m.name);
+            const data   = models.map(m => m.r2 > -90 ? m.r2 : null);
+            const colors = models.map(m =>
+                m.name === chosen
+                    ? 'rgba(0,255,65,0.85)'
+                    : m.r2 >= 0
+                        ? 'rgba(0,255,65,0.35)'
+                        : 'rgba(255,77,77,0.4)'
+            );
+
+            r2ChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'R\u00B2 (Confiabilidade)',
+                        data:  data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.85','1').replace('0.35','0.8').replace('0.4','0.8')),
                         borderWidth: 1,
-                        titleColor: '#00ff41',
-                        bodyColor: '#4dff79',
-                        callbacks: {
-                            label: ctx => ` R²: ${ctx.raw !== null ? ctx.raw.toFixed(4) : 'N/A'}`
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0d0d0d',
+                            borderColor: 'var(--glass-border)',
+                            borderWidth: 1,
+                            titleColor: '#00ff41',
+                            bodyColor: '#4dff79',
+                            callbacks: {
+                                label: ctx => ` R\u00B2: ${ctx.raw !== null ? ctx.raw.toFixed(4) : 'N/A'}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1a1a1a' },
+                            ticks: { color: '#4dff79', font: { size: 10 } },
+                            min: -1
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#00ff41', font: { size: 10, family: "'Courier New', monospace" } }
                         }
                     }
-                },
-                scales: {
-                    x: {
-                        grid: { color: '#1a1a1a' },
-                        ticks: { color: '#4dff79', font: { size: 10 } },
-                        min: -1
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { color: '#00ff41', font: { size: 10, family: "'Courier New', monospace" } }
-                    }
                 }
-            }
-        });
-
-        // ── Heatmap ────────────────────────────────────────────────────────
-        // Coletar todos os nomes de modelo presentes nos dados
-        const allModelNamesInData = [...new Set(
-            Object.values(perTicker).flatMap(obj => Object.keys(obj))
-        )];
-
-        // Cabeçalho
-        const thead = document.getElementById('heatmap-head');
-        const headRow = document.createElement('tr');
-        headRow.innerHTML = '<th class="ticker-col">Ticker</th>' +
-            allModelNamesInData.map(m => `<th title="${m}">${m.length > 12 ? m.substring(0,12)+'…' : m}</th>`).join('');
-        thead.appendChild(headRow);
-
-        // Calcular min/max global para colorização
-        const allVals = Object.values(perTicker)
-            .flatMap(obj => Object.values(obj))
-            .filter(v => typeof v === 'number');
-        const minVal = Math.min(...allVals);
-        const maxVal = Math.max(...allVals);
-
-        function heatColor(val) {
-            if (val === null || val === undefined) return '#111';
-            const norm = (val - minVal) / (maxVal - minVal + 0.001);
-            if (val >= 0) {
-                const g = Math.round(55 + norm * 200);
-                return `rgba(0, ${g}, 30, 0.4)`;
-            } else {
-                const r = Math.round(100 + (1 - norm) * 155);
-                return `rgba(${r}, 30, 30, 0.4)`;
-            }
+            });
         }
 
-        // Corpo
-        const heatbody = document.getElementById('heatmap-body');
-        tickers.forEach(tkr => {
-            const tr = document.createElement('tr');
-            tr.style.cursor = 'pointer';
-            tr.innerHTML = `<td class="ticker-cell">${tkr}</td>`;
-            allModelNamesInData.forEach(mName => {
-                const val = perTicker[tkr]?.[mName];
-                const display = val !== undefined ? (val >= 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`) : '—';
-                const td = document.createElement('td');
-                td.textContent = display;
-                td.style.background = heatColor(val);
-                td.style.color = val >= 0 ? 'var(--success)' : 'var(--danger)';
-                tr.appendChild(td);
+        function renderHeatmap(perTicker, chosen) {
+            const thead = document.getElementById('heatmap-head');
+            const heatbody = document.getElementById('heatmap-body');
+            thead.innerHTML = '';
+            heatbody.innerHTML = '';
+
+            const tickers = Object.keys(perTicker);
+            const allModelNamesInData = [...new Set(
+                Object.values(perTicker).flatMap(obj => Object.keys(obj))
+            )];
+
+            // Cabecalho
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th class="ticker-col">Ticker</th>' +
+                allModelNamesInData.map(m => `<th title="${m}">${m.length > 12 ? m.substring(0,12)+'...' : m}</th>`).join('');
+            thead.appendChild(headRow);
+
+            // Calc min/max global
+            const allVals = Object.values(perTicker)
+                .flatMap(obj => Object.values(obj))
+                .filter(v => typeof v === 'number');
+            const minVal = Math.min(...allVals);
+            const maxVal = Math.max(...allVals);
+
+            function heatColor(val) {
+                if (val === null || val === undefined) return '#111';
+                const norm = (val - minVal) / (maxVal - minVal + 0.001);
+                if (val >= 0) {
+                    const g = Math.round(55 + norm * 200);
+                    return `rgba(0, ${g}, 30, 0.4)`;
+                } else {
+                    const r = Math.round(100 + (1 - norm) * 155);
+                    return `rgba(${r}, 30, 30, 0.4)`;
+                }
+            }
+
+            tickers.forEach(tkr => {
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = `<td class="ticker-cell">${tkr}</td>`;
+                allModelNamesInData.forEach(mName => {
+                    const val = perTicker[tkr]?.[mName];
+                    const display = val !== undefined
+                        ? (val >= 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`)
+                        : '\u2014';
+                    const td = document.createElement('td');
+                    td.textContent = display;
+                    td.style.background = heatColor(val);
+                    td.style.color = val >= 0 ? 'var(--success)' : 'var(--danger)';
+                    tr.appendChild(td);
+                });
+                tr.addEventListener('click', () => showDetail(tkr, perTicker, chosen));
+                heatbody.appendChild(tr);
             });
 
-            tr.addEventListener('click', () => showDetail(tkr));
-            heatbody.appendChild(tr);
-        });
+            applyFilter();
+        }
 
-        // ── Painel de detalhe por ticker ───────────────────────────────────
-        function showDetail(tkr) {
+        function showDetail(tkr, perTicker, chosen) {
             const panel = document.getElementById('detail-panel');
             const barsDiv = document.getElementById('detail-bars');
             document.getElementById('detail-ticker-label').textContent = tkr;
@@ -551,12 +621,12 @@
                 const isPos    = val >= 0;
                 const widthPct = Math.min((Math.abs(val) / absMax) * 100, 100);
                 const label    = `${isPos ? '+' : ''}${val.toFixed(2)}%`;
-                const isChosen = mName === chosenModel;
+                const isChosen = mName === chosen;
                 const row = document.createElement('div');
                 row.className = 'detail-bar-row';
                 row.innerHTML = `
                     <span class="detail-model-name" style="${isChosen ? 'color:var(--accent-color); font-weight:700;' : ''}">
-                        ${mName}${isChosen ? ' ✦' : ''}
+                        ${mName}${isChosen ? ' \u2726' : ''}
                     </span>
                     <div class="detail-bar-outer">
                         <div class="detail-bar-inner ${isPos ? 'detail-bar-pos' : 'detail-bar-neg'}"
@@ -566,9 +636,6 @@
                 barsDiv.appendChild(row);
             });
         }
-
-        lucide.createIcons();
-    });
     </script>
 </body>
 </html>
