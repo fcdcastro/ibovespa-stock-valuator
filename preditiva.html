@@ -102,24 +102,21 @@
                             </th>
                             <th style="width:11%;">Empresa</th>
                             <th style="width:6%;">Preço</th>
-                            <th class="col-ret">
+                            <th class="col-ret" colspan="2">
                                 <div class="tooltip">3M <i data-lucide="info" class="info-icon"></i>
                                     <span class="tooltiptext"><b>Retorno 3 Meses:</b> Previsão do melhor modelo treinado com 90 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th class="col-signal">Sinal</th>
-                            <th class="col-ret">
+                            <th class="col-ret" colspan="2">
                                 <div class="tooltip">6M <i data-lucide="info" class="info-icon"></i>
                                     <span class="tooltiptext"><b>Retorno 6 Meses:</b> Previsão do melhor modelo treinado com 180 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th class="col-signal">Sinal</th>
-                            <th class="col-ret">
+                            <th class="col-ret" colspan="2">
                                 <div class="tooltip">12M <i data-lucide="info" class="info-icon"></i>
                                     <span class="tooltiptext"><b>Retorno 12 Meses:</b> Previsão do melhor modelo treinado com 360 pregões históricos.</span>
                                 </div>
                             </th>
-                            <th class="col-signal">Sinal</th>
                             <th style="width:8%;">
                                 <div class="tooltip">Consenso <i data-lucide="info" class="info-icon"></i>
                                     <span class="tooltiptext"><b>Consenso:</b> Direção predominante entre os 3 horizontes. ● = positivo, ○ = neutro, ● = negativo.</span>
@@ -355,11 +352,12 @@
                 HORIZONS.forEach(h => {
                     const v = s[HORIZON_FIELD[h]];
                     const isPos = v >= 0;
+                    const valStr = v != null ? (isPos ? '+' : '') + v.toFixed(2) + '%' : '-';
                     html += `
-                        <td style="color:${isPos ? 'var(--success)' : 'var(--danger)'};font-weight:700;">
-                            ${v != null ? (isPos ? '+' : '') + v.toFixed(2) + '%' : '-'}
+                        <td colspan="2" style="white-space:nowrap;">
+                            <span style="color:${isPos ? 'var(--success)' : 'var(--danger)'};font-weight:700;">${valStr}</span>
+                            <span class="status-badge ${sig[h].cls}" style="font-size:0.6rem;padding:0.1rem 0.3rem;margin-left:4px;">${sig[h].label}</span>
                         </td>
-                        <td><span class="status-badge ${sig[h].cls}" style="font-size:0.6rem;padding:0.1rem 0.3rem;">${sig[h].label}</span></td>
                     `;
                 });
                 html += `<td>${getConsensusDots(s)}</td>`;
