@@ -63,8 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStats(stockData);
             }
             
-            ixUpdateAll(stockData);
-            
         } catch (error) {
             console.error('Erro:', error);
             showError('Erro ao carregar dados. Verifique se o servidor está rodando (python server.py) ou se o data.json existe.');
@@ -159,148 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return { label: 'Venda', class: 'status-sell' };
     }
 
-    // --- Scatter Chart (Risco x Retorno) ---
-    const IBOV_TICKERS = [
-        "PETR4","VALE3","ITUB4","BBDC4","BBAS3","ABEV3","B3SA3","WEGE3","SUZB3","RENT3",
-        "LREN3","JBSS3","RADL3","EQTL3","ELET3","ELET6","HAPV3","PRIO3","RDOR3","RAIL3",
-        "SBSP3","VIVT3","BBSE3","CPLE6","CMIG4","CCRO3","CSNA3","GGBR4","USIM5","BRFS3",
-        "TOTS3","ASAI3","NTCO3","KLBN11","TIMS3","BPAC11","CSAN3","MGLU3","EGIE3","CPFE3",
-        "CYRE3","MULT3","VBBR3","CRFB3","ENGI11","TAEE11","TRPL4","ALOS3","IGTI11"
-    ];
-    let ixChartInstance = null;
-    let ixSelectedTicker = null;
-
-    function ixClassify(tkr) {
-        return IBOV_TICKERS.includes(tkr) ? 'ibov' : 'small';
-    }
-
-    function ixCalcRisk(stock) {
-        var score = 0;
-        if (stock.debt_equity > 3)          score += 3;
-        else if (stock.debt_equity > 1.5)   score += 1.5;
-        else if (stock.debt_equity > 0.5)   score += 0.5;
-        if (stock.net_margin < -5)           score += 3;
-        else if (stock.net_margin < 0)       score += 1.5;
-        if (stock.roe < -5)                  score += 2;
-        else if (stock.roe < 0)              score += 1;
-        if (stock.p_e === 0 || stock.p_e === null) score += 1;
-        if (stock.volume < 1000000)           score += 1;
-        return score;
-    }
-
-    function ixRenderChart(data) {
-        var canvas = document.getElementById('ix-scatter-chart');
-        if (!canvas) return;
-        var ctx;
-        try { ctx = canvas.getContext('2d'); } catch(e) { return; }
-        if (ixChartInstance) { ixChartInstance.destroy(); ixChartInstance = null; }
-
-        var ibovData = [];
-        var smallData = [];
-        for (var i = 0; i < data.length; i++) {
-            var d = data[i];
-            if (d.risco === undefined || d.retorno === undefined) continue;
-            var pt = { x: d.risco, y: d.retorno, ticker: d.ticker };
-            if (d.category === 'ibov') ibovData.push(pt);
-            else smallData.push(pt);
-        }
-
-        var sel = ixSelectedTicker;
-        function styleDS(label, points, baseColor, hlColor) {
-            var bg = [], border = [], radius = [], hoverR = [];
-            for (var i = 0; i < points.length; i++) {
-                if (sel && points[i].ticker === sel) {
-                    bg.push(hlColor); border.push(hlColor); radius.push(10); hoverR.push(14);
-                } else if (sel) {
-                    bg.push('rgba(255,255,255,0.04)'); border.push('rgba(255,255,255,0.08)'); radius.push(3); hoverR.push(5);
-                } else {
-                    bg.push(baseColor); border.push(baseColor.replace('0.5','0.9')); radius.push(5); hoverR.push(8);
-                }
-            }
-            return { label, data: points, pointBackgroundColor: bg, pointBorderColor: border, pointBorderWidth: 1, pointRadius: radius, pointHoverRadius: hoverR };
-        }
-
-        var datasets = [];
-        if (ibovData.length) datasets.push(styleDS('Ibovespa', ibovData, 'rgba(0,255,65,0.5)', 'rgba(0,255,65,1)'));
-        if (smallData.length) datasets.push(styleDS('Small/Mid Caps', smallData, 'rgba(255,170,0,0.5)', 'rgba(255,200,0,1)'));
-
-        try {
-            ixChartInstance = new Chart(ctx, {
-                type: 'scatter',
-                data: { datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
-                    onClick: function(e, elements) {
-                        if (elements.length > 0) {
-                            var el = elements[0];
-                            var ticker = this.data.datasets[el.datasetIndex].data[el.index].ticker;
-                            ixSelectedTicker = (ixSelectedTicker === ticker) ? null : ticker;
-                            if (stockData && stockData.length) ixUpdateAll(stockData);
-                        }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#4dff79', font: { size: 10 } } },
-                        tooltip: {
-                            backgroundColor: '#0d0d0d', borderColor: '#00ff41', borderWidth: 1,
-                            titleColor: '#00ff41', bodyColor: '#4dff79',
-                            callbacks: {
-                                title: function(items) { var it = items[0]; return it.raw && it.raw.ticker ? it.raw.ticker : ''; },
-                                label: function(ctx) {
-                                    var d = ctx.raw; if (!d) return '';
-                                    var ret = d.y >= 0 ? '+' + d.y.toFixed(2) + '%' : d.y.toFixed(2) + '%';
-                                    return ' Retorno: ' + ret + '  Risco: ' + d.x.toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Risco (Score)', color: '#4dff79', font: { size: 11 } }, grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } },
-                        y: { title: { display: true, text: 'Retorno Esperado (%)', color: '#4dff79', font: { size: 11 } }, grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 }, callback: function(v) { return v >= 0 ? '+' + v.toFixed(1) + '%' : v.toFixed(1) + '%'; } } }
-                    }
-                }
-            });
-        } catch(e) { console.error('Chart error:', e); }
-    }
-
-    function ixUpdateAll(stockArray) {
-        var dataPoints = [];
-        for (var i = 0; i < stockArray.length; i++) {
-            var s = stockArray[i];
-            if (!s.price || s.price <= 0) continue;
-            var retorno = (s.upside !== undefined && s.upside > -100) ? s.upside : (s.expected_return_3m || 0);
-            var risco = ixCalcRisk(s);
-            dataPoints.push({ ticker: s.ticker, retorno: retorno, risco: risco, category: ixClassify(s.ticker) });
-        }
-
-        var indicator = document.getElementById('ix-selection-indicator');
-        var label = document.getElementById('ix-selected-label');
-        if (ixSelectedTicker && indicator && label) {
-            indicator.style.display = 'inline';
-            label.textContent = ixSelectedTicker;
-        } else if (indicator) {
-            indicator.style.display = 'none';
-        }
-
-        ixRenderChart(dataPoints);
-    }
-
-    window.ixClearSelection = function() {
-        ixSelectedTicker = null;
-        if (stockData && stockData.length) ixUpdateAll(stockData);
-    };
-
-    function ixSetupTableClick() {
-        document.getElementById('stock-table-body').addEventListener('click', function(e) {
-            var tr = e.target.closest('tr');
-            if (!tr) return;
-            var tickerCell = tr.querySelector('.ticker-cell');
-            if (!tickerCell) return;
-            var ticker = tickerCell.textContent.trim();
-            ixSelectedTicker = (ixSelectedTicker === ticker) ? null : ticker;
-            if (stockData && stockData.length) ixUpdateAll(stockData);
-        });
-    }
-
     function formatNumber(num) {
         if (num === null || num === undefined || isNaN(num)) return '-';
         if (num === Infinity) return '∞';
@@ -355,9 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
-    // Setup scatter chart interaction
-    ixSetupTableClick();
 
     // Initial fetch
     fetchData();

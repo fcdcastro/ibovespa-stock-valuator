@@ -151,6 +151,134 @@
     <script>
         lucide.createIcons();
     </script>
+    <script>
+        (function() {
+            var rrIbov = ["PETR4","VALE3","ITUB4","BBDC4","BBAS3","ABEV3","B3SA3","WEGE3","SUZB3","RENT3","LREN3","JBSS3","RADL3","EQTL3","ELET3","ELET6","HAPV3","PRIO3","RDOR3","RAIL3","SBSP3","VIVT3","BBSE3","CPLE6","CMIG4","CCRO3","CSNA3","GGBR4","USIM5","BRFS3","TOTS3","ASAI3","NTCO3","KLBN11","TIMS3","BPAC11","CSAN3","MGLU3","EGIE3","CPFE3","CYRE3","MULT3","VBBR3","CRFB3","ENGI11","TAEE11","TRPL4","ALOS3","IGTI11"];
+            var rrChart = null;
+            var rrSelected = null;
+            var rrData = [];
+
+            function rrCalcRisk(s) {
+                var sc = 0;
+                if (s.debt_equity > 3) sc += 3; else if (s.debt_equity > 1.5) sc += 1.5; else if (s.debt_equity > 0.5) sc += 0.5;
+                if (s.net_margin < -5) sc += 3; else if (s.net_margin < 0) sc += 1.5;
+                if (s.roe < -5) sc += 2; else if (s.roe < 0) sc += 1;
+                if (s.p_e === 0 || s.p_e === null) sc += 1;
+                if (s.volume < 1000000) sc += 1;
+                return sc;
+            }
+
+            function rrUpdateIndicator() {
+                var ind = document.getElementById('ix-selection-indicator');
+                var lbl = document.getElementById('ix-selected-label');
+                if (rrSelected && ind && lbl) {
+                    ind.style.display = 'inline';
+                    lbl.textContent = rrSelected;
+                } else if (ind) {
+                    ind.style.display = 'none';
+                }
+            }
+
+            function rrSelect(ticker) {
+                rrSelected = (rrSelected === ticker) ? null : ticker;
+                rrUpdateIndicator();
+            }
+
+            window.ixClearSelection = function() {
+                rrSelected = null;
+                rrUpdateIndicator();
+            };
+
+            function rrBuildChart() {
+                var raw = window.__STOCK_DATA__;
+                if (!raw) return;
+                var arr = raw.stocks || raw;
+                if (!arr || !arr.length) return;
+
+                var canvas = document.getElementById('ix-scatter-chart');
+                if (!canvas) return;
+                var ctx;
+                try { ctx = canvas.getContext('2d'); } catch(e) { return; }
+                if (rrChart) { rrChart.destroy(); rrChart = null; }
+
+                var ibovPts = [], smallPts = [];
+                rrData = [];
+                for (var i = 0; i < arr.length; i++) {
+                    var s = arr[i];
+                    if (!s.price || s.price <= 0) continue;
+                    var ret = (s.upside !== undefined && s.upside > -100) ? s.upside : (s.expected_return_3m || 0);
+                    var risk = rrCalcRisk(s);
+                    var pt = { x: risk, y: ret, ticker: s.ticker };
+                    rrData.push({ ticker: s.ticker, retorno: ret, risco: risk });
+                    if (rrIbov.indexOf(s.ticker) >= 0) ibovPts.push(pt);
+                    else smallPts.push(pt);
+                }
+
+                var ds = [];
+                if (ibovPts.length) ds.push({ label: 'Ibovespa', data: ibovPts, pointBackgroundColor: 'rgba(0,255,65,0.6)', pointBorderColor: '#00ff41', pointBorderWidth: 1, pointRadius: 5, pointHoverRadius: 8 });
+                if (smallPts.length) ds.push({ label: 'Small/Mid Caps', data: smallPts, pointBackgroundColor: 'rgba(255,170,0,0.6)', pointBorderColor: '#ffaa00', pointBorderWidth: 1, pointRadius: 5, pointHoverRadius: 8 });
+
+                try {
+                    rrChart = new Chart(ctx, {
+                        type: 'scatter',
+                        data: { datasets: ds },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+                            onClick: function(e, elements) {
+                                if (elements.length > 0) {
+                                    var el = elements[0];
+                                    var t = this.data.datasets[el.datasetIndex].data[el.index].ticker;
+                                    rrSelect(t);
+                                }
+                            },
+                            plugins: {
+                                legend: { labels: { color: '#4dff79', font: { size: 10 } } },
+                                tooltip: {
+                                    backgroundColor: '#0d0d0d', borderColor: '#00ff41', borderWidth: 1,
+                                    titleColor: '#00ff41', bodyColor: '#4dff79',
+                                    callbacks: {
+                                        title: function(items) { var it = items[0]; return it.raw && it.raw.ticker ? it.raw.ticker : ''; },
+                                        label: function(ctx) {
+                                            var d = ctx.raw; if (!d) return '';
+                                            var r = d.y >= 0 ? '+' + d.y.toFixed(2) + '%' : d.y.toFixed(2) + '%';
+                                            return ' Retorno: ' + r + '  Risco: ' + d.x.toFixed(2);
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { title: { display: true, text: 'Risco (Score)', color: '#4dff79', font: { size: 11 } }, grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } },
+                                y: { title: { display: true, text: 'Retorno Esperado (%)', color: '#4dff79', font: { size: 11 } }, grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 }, callback: function(v) { return v >= 0 ? '+' + v.toFixed(1) + '%' : v.toFixed(1) + '%'; } } }
+                            }
+                        }
+                    });
+                } catch(e) { console.error('RR Chart error:', e); }
+            }
+
+            function rrSetupTableClick() {
+                var tbody = document.getElementById('stock-table-body');
+                if (!tbody) return;
+                tbody.addEventListener('click', function(e) {
+                    var tr = e.target.closest('tr');
+                    if (!tr) return;
+                    var cell = tr.querySelector('.ticker-cell');
+                    if (!cell) return;
+                    rrSelect(cell.textContent.trim());
+                });
+            }
+
+            function rrInit() {
+                rrBuildChart();
+                rrSetupTableClick();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', rrInit);
+            } else {
+                rrInit();
+            }
+        })();
+    </script>
 </body>
 
 </html>
