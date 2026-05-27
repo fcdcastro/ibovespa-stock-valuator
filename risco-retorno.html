@@ -98,9 +98,6 @@
         .filter-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); font-weight: 700; }
         .filter-chip[data-filter="ibov"].active { background: #00ff41; color: #050505; }
         .filter-chip[data-filter="small"].active { background: #ffaa00; color: #050505; }
-        .horizon-chip { min-width: 42px; text-align: center; }
-        .horizon-chip.active { background: var(--accent-color); color: #050505; border-color: var(--accent-color); }
-        .horizon-label { font-size: 0.65rem; color: var(--text-secondary); margin-right: 0.3rem; }
     </style>
 </head>
 
@@ -153,11 +150,6 @@
                 <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">Todos</button>
                 <button class="filter-chip" data-filter="ibov" onclick="setFilter('ibov')">Ibovespa</button>
                 <button class="filter-chip" data-filter="small" onclick="setFilter('small')">Small/Mid Caps</button>
-                <span style="flex:1;min-width:10px"></span>
-                <span class="horizon-label">Horizonte:</span>
-                <button class="filter-chip horizon-chip active" data-horizon="3m" onclick="setHorizon('3m')">3M</button>
-                <button class="filter-chip horizon-chip" data-horizon="6m" onclick="setHorizon('6m')">6M</button>
-                <button class="filter-chip horizon-chip" data-horizon="12m" onclick="setHorizon('12m')">12M</button>
             </div>
         </section>
 
@@ -179,7 +171,7 @@
                 </div>
             </div>
             <div class="rr-card">
-                <h3><i data-lucide="scatter-chart"></i> Risco (Disperção dos Modelos) x Retorno Esperado</h3>
+                <h3><i data-lucide="scatter-chart"></i> Risco (Indicadores Fundamentalistas) x Retorno (Upside)</h3>
                 <div class="chart-container" style="height:500px;">
                     <canvas id="scatter-chart"></canvas>
                 </div>
@@ -201,7 +193,6 @@
         }
 
         let currentFilter = 'all';
-        let currentHorizon = '3m';
         let stocks = [], modelInfo = null;
         let scatterChartInstance = null;
         let selectedTicker = null;
@@ -214,17 +205,18 @@
             renderAll();
         }
 
-        function setHorizon(h) {
-            currentHorizon = h;
-            document.querySelectorAll('.horizon-chip').forEach(el => {
-                el.classList.toggle('active', el.dataset.horizon === h);
-            });
-            renderAll();
-        }
-
-        function getPerTicker(h) {
-            return (modelInfo.per_ticker_predictions_by_horizon && modelInfo.per_ticker_predictions_by_horizon[h])
-                || modelInfo.per_ticker_predictions || {};
+        function calcRisk(stock) {
+            let score = 0;
+            if (stock.debt_equity > 3)          score += 3;
+            else if (stock.debt_equity > 1.5)   score += 1.5;
+            else if (stock.debt_equity > 0.5)   score += 0.5;
+            if (stock.net_margin < -5)           score += 3;
+            else if (stock.net_margin < 0)       score += 1.5;
+            if (stock.roe < -5)                  score += 2;
+            else if (stock.roe < 0)              score += 1;
+            if (stock.p_e === 0 || stock.p_e === null) score += 1;
+            if (stock.volume < 1000000)           score += 1;
+            return score;
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -276,22 +268,16 @@
         });
 
         function renderAll() {
-            const h = currentHorizon;
-            const perTicker = getPerTicker(h);
+            const dataPoints = stocks
+                .filter(s => s.price && s.price > 0 && s.expected_return_3m !== undefined)
+                .map(s => {
+                    const retorno = s.upside !== undefined && s.upside > -100 ? s.upside : s.expected_return_3m;
+                    const risco = calcRisk(s);
+                    const cat = classifyTicker(s.ticker);
+                    return { ticker: s.ticker, retorno, risco, category: cat };
+                })
+                .filter(d => d.retorno !== null && d.risco !== null);
 
-            // Calcular risco (desvio padrao das predicoes) e retorno (media) para cada ticker
-            const dataPoints = [];
-            Object.entries(perTicker).forEach(([tkr, preds]) => {
-                const vals = Object.values(preds).filter(v => typeof v === 'number' && isFinite(v));
-                if (vals.length < 2) return;
-                const mean = vals.reduce((a,b) => a+b, 0) / vals.length;
-                const variance = vals.reduce((sum, v) => sum + (v - mean) ** 2, 0) / vals.length;
-                const risk = Math.sqrt(variance);
-                const cat = classifyTicker(tkr);
-                dataPoints.push({ ticker: tkr, retorno: mean, risco: risk, category: cat });
-            });
-
-            // Filtrar
             const filtered = currentFilter === 'all'
                 ? dataPoints
                 : dataPoints.filter(d => d.category === currentFilter);
@@ -308,14 +294,13 @@
             const ibovData = data.filter(d => d.category === 'ibov');
             const smallData = data.filter(d => d.category === 'small');
 
-            const ibovPoints = ibovData.map(d => ({
-                x: d.risco, y: d.retorno, ticker: d.ticker,
-                isSelected: d.ticker === selectedTicker
-            }));
-            const smallPoints = smallData.map(d => ({
-                x: d.risco, y: d.retorno, ticker: d.ticker,
-                isSelected: d.ticker === selectedTicker
-            }));
+            const ibovPoints = ibovData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker }));
+            const smallPoints = smallData.map(d => ({ x: d.risco, y: d.retorno, ticker: d.ticker }));
+
+            // Selected point as separate dataset for highlight
+            const sel = data.find(d => d.ticker === selectedTicker);
+            const selPoints = sel ? [{ x: sel.risco, y: sel.retorno, ticker: sel.ticker }] : [];
+            const selCat = sel ? sel.category : null;
 
             scatterChartInstance = new Chart(ctx, {
                 type: 'scatter',
@@ -324,46 +309,32 @@
                         {
                             label: 'Ibovespa',
                             data: ibovPoints,
-                            pointBackgroundColor: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 'rgba(0,255,65,1)' : 'rgba(0,255,65,0.5)';
-                            },
-                            pointBorderColor: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? '#fff' : 'rgba(0,255,65,0.9)';
-                            },
-                            pointBorderWidth: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 2 : 1;
-                            },
-                            pointRadius: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 10 : 5;
-                            },
-                            pointHoverRadius: 10
+                            backgroundColor: 'rgba(0,255,65,0.5)',
+                            borderColor: 'rgba(0,255,65,0.9)',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
                         },
                         {
                             label: 'Small/Mid Caps',
                             data: smallPoints,
-                            pointBackgroundColor: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 'rgba(255,170,0,1)' : 'rgba(255,170,0,0.5)';
-                            },
-                            pointBorderColor: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? '#fff' : 'rgba(255,170,0,0.9)';
-                            },
-                            pointBorderWidth: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 2 : 1;
-                            },
-                            pointRadius: ctx => {
-                                const raw = ctx.raw;
-                                return raw && raw.isSelected ? 10 : 5;
-                            },
-                            pointHoverRadius: 10
-                        }
-                    ]
+                            backgroundColor: 'rgba(255,170,0,0.5)',
+                            borderColor: 'rgba(255,170,0,0.9)',
+                            borderWidth: 1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        },
+                        selPoints.length > 0 ? {
+                            label: selCat === 'ibov' ? 'Selecionado' : 'Selecionado',
+                            data: selPoints,
+                            backgroundColor: selCat === 'ibov' ? 'rgba(0,255,65,1)' : 'rgba(255,170,0,1)',
+                            borderColor: '#fff',
+                            borderWidth: 2,
+                            pointRadius: 12,
+                            pointHoverRadius: 12,
+                            pointBorderColor: '#fff'
+                        } : null
+                    ].filter(Boolean)
                 },
                 options: {
                     responsive: true,
@@ -392,12 +363,12 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Risco (Desvio Padrão dos Modelos)', color: '#4dff79', font: { size: 11 } },
+                            title: { display: true, text: 'Risco (Score Fundamentalista)', color: '#4dff79', font: { size: 11 } },
                             grid: { color: '#1a1a1a' },
                             ticks: { color: '#4dff79', font: { size: 9 } }
                         },
                         y: {
-                            title: { display: true, text: 'Retorno Esperado Médio (%)', color: '#4dff79', font: { size: 11 } },
+                            title: { display: true, text: 'Retorno Esperado - Upside (%)', color: '#4dff79', font: { size: 11 } },
                             grid: { color: '#1a1a1a' },
                             ticks: {
                                 color: '#4dff79', font: { size: 9 },
