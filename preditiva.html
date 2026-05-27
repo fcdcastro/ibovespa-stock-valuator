@@ -27,7 +27,8 @@
         .badge-high { background:rgba(0,255,65,0.15); color:var(--success); border:1px solid var(--success); }
         .badge-mid { background:rgba(255,204,0,0.15); color:var(--warning); border:1px solid var(--warning); }
         .badge-low { background:rgba(255,77,77,0.15); color:var(--danger); border:1px solid var(--danger); }
-        .mini-chart-wrap { width:100%; height:40px; }
+        .mini-chart-wrap { width:100%; height:120px; position:relative; }
+
         .col-ret { min-width:85px; }
         .col-signal { min-width:55px; }
         th .tooltip { font-size:inherit; text-transform:inherit; letter-spacing:inherit; }
@@ -69,7 +70,7 @@
         <!-- Trajetória do TOP 1 -->
         <section class="table-container glass" style="margin-bottom:0.5rem;">
             <div class="section-header" style="padding:0.3rem 10px; border-bottom:none;">
-                <h2 style="font-size:1rem;"><i data-lucide="trending-up"></i> Trajetória — <span id="trajectory-label">carregando...</span></h2>
+                <h2 style="font-size:0.9rem;"><i data-lucide="trending-up"></i> Trajetória do Retorno Esperado — <span id="trajectory-label">carregando...</span></h2>
             </div>
             <div style="padding:0 10px 0.5rem;">
                 <div class="mini-chart-wrap"><canvas id="trajectory-chart"></canvas></div>
@@ -257,16 +258,19 @@
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['3M', '6M', '12M'],
+                    labels: ['3 Meses', '6 Meses', '12 Meses'],
                     datasets: [{
                         data: vals,
-                        borderColor: 'var(--accent-color)',
-                        backgroundColor: 'rgba(0,255,65,0.1)',
+                        borderColor: '#00ff41',
+                        backgroundColor: 'rgba(0,255,65,0.08)',
                         fill: true,
-                        tension: 0.3,
-                        pointBackgroundColor: vals.map(v => v >= 0 ? 'var(--success)' : 'var(--danger)'),
-                        pointRadius: 4,
-                        borderWidth: 2
+                        tension: 0.25,
+                        pointBackgroundColor: ['#00ff41', '#ffcc00', '#ff6b35'],
+                        pointBorderColor: '#050505',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        borderWidth: 3
                     }]
                 },
                 options: {
@@ -276,18 +280,38 @@
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: '#0d0d0d',
-                            borderColor: 'var(--glass-border)',
+                            borderColor: '#00ff41',
                             borderWidth: 1,
                             titleColor: '#00ff41',
-                            bodyColor: '#4dff79',
+                            bodyColor: '#ffffff',
                             callbacks: {
-                                label: ctx => `${ctx.raw !== null ? (ctx.raw >= 0 ? '+' : '') + ctx.raw.toFixed(2) + '%' : 'N/A'}`
+                                label: function(ctx) {
+                                    const v = ctx.raw;
+                                    if (v === null || v === undefined) return ' N/A';
+                                    const sign = v >= 0 ? '+' : '';
+                                    return ' ' + sign + v.toFixed(2) + '%';
+                                }
                             }
                         }
                     },
                     scales: {
-                        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } },
-                        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#4dff79', font: { size: 9 } } }
+                        x: {
+                            grid: { color: '#1a1a1a' },
+                            ticks: { color: '#4dff79', font: { size: 11, weight: 'bold' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(0,255,65,0.08)' },
+                            ticks: {
+                                color: '#4dff79',
+                                font: { size: 10 },
+                                callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; }
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: '#ffffff'
+                        }
                     }
                 }
             });
