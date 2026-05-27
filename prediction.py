@@ -1,4 +1,4 @@
-import yfinance as yf
+﻿import yfinance as yf
 import pandas as pd
 import numpy as np
 import warnings
@@ -235,7 +235,7 @@ class PredictionEngine:
             best_name, best_info = fund_engine.best()
             if best_name and best_info:
                 df[f'expected_return_{horizon_label}'] = fund_preds.get(best_name, [0.0] * len(df))
-                print(f"      Melhor modelo: {best_name} (R²={best_info['r2']:.4f})")
+                print(f"      Melhor modelo: {best_name} (RÂ²={best_info['r2']:.4f})")
             else:
                 df[f'expected_return_{horizon_label}'] = 0.0
                 print("      Nenhum modelo convergiu.")
@@ -284,25 +284,30 @@ class PredictionEngine:
                     })
                 all_models_by_horizon[horizon_label].sort(key=lambda x: x["r2"], reverse=True)
 
-        # Sort final da tabela pelo retorno 3m (padr�o)
+        # Sort final da tabela pelo retorno 3m (padrï¿½o)
         df = df.sort_values(by="expected_return_3m", ascending=False)
 
-        # Montar m�tricas
-        best_global_name = horizon_best.get("3m", "N/A")
-        best_global_r2 = 0
-        for m in all_models_by_horizon.get("3m", []):
-            if m["name"] == best_global_name:
-                best_global_r2 = m["r2"]
-                break
+
+        # Compatibilidade com frontends antigos (flat format usando horizonte 3m)
+        flat_models = all_models_by_horizon.get("3m", [])
+        flat_per_ticker = all_per_ticker.get("3m", {})
+        rf_info  = next((m for m in flat_models if m["name"] == "Random Forest"), {"r2": 0, "mae": 0})
+        xgb_info = next((m for m in flat_models if m["name"] == "XGBoost"), {"r2": 0, "mae": 0})
 
         self.metrics = {
-            "chosen_model": best_global_name,
-            "r2": best_global_r2,
-            "mae": 0,
+            "chosen_model": horizon_best.get("3m", "N/A"),
+            "r2": next((m["r2"] for m in flat_models if m["name"] == horizon_best.get("3m")), 0),
+            "mae": next((m["mae"] for m in flat_models if m["name"] == horizon_best.get("3m")), 0),
+            "rf_r2":  rf_info["r2"],
+            "rf_mae": rf_info["mae"],
+            "xgb_r2":  xgb_info["r2"],
+            "xgb_mae": xgb_info["mae"],
             "horizons": list(self.HORIZONS.keys()),
             "horizon_best": horizon_best,
-            "all_models": all_models_by_horizon,
-            "per_ticker_predictions": all_per_ticker
+            "all_models": flat_models,              # flat (backward compat)
+            "all_models_by_horizon": all_models_by_horizon,  # novo formato
+            "per_ticker_predictions": flat_per_ticker,       # flat (backward compat)
+            "per_ticker_predictions_by_horizon": all_per_ticker  # novo formato
         }
 
         print(f"\nOK Melhores modelos por horizonte: {horizon_best}")
