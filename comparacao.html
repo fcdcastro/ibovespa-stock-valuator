@@ -52,18 +52,33 @@
         }
         .rank-table td {
             font-size: 0.8rem;
-            padding: 0.35rem 0.5rem;
+            padding: 0.4rem 0.5rem;
             border-bottom: 1px solid #1a1a1a;
             white-space: nowrap;
         }
-        .rank-table tr.winner td { color: var(--accent-color); font-weight: 700; }
-        .rank-table tr.rank-1 td { background: rgba(255,215,0,0.08); }
-        .rank-table tr.rank-2 td { background: rgba(192,192,192,0.06); }
-        .rank-table tr.rank-3 td { background: rgba(205,127,50,0.05); }
-        .rank-pos { font-weight: 800; font-size: 0.9rem; }
-        .rank-pos.gold   { color: #ffd700; }
-        .rank-pos.silver { color: #c0c0c0; }
-        .rank-pos.bronze { color: #cd7f32; }
+        .rank-table tr:not(.rank-1):not(.rank-2):not(.rank-3):hover td { background: rgba(0,255,65,0.03); }
+        .rank-table tr.rank-1 td { background: rgba(255,215,0,0.1); }
+        .rank-table tr.rank-2 td { background: rgba(192,192,192,0.08); }
+        .rank-table tr.rank-3 td { background: rgba(205,127,50,0.06); }
+        .rank-pos-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 0.75rem;
+        }
+        .rank-pos-badge.gold   { background: rgba(255,215,0,0.2);   color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
+        .rank-pos-badge.silver { background: rgba(192,192,192,0.15); color: #c0c0c0; border: 1px solid rgba(192,192,192,0.3); }
+        .rank-pos-badge.bronze { background: rgba(205,127,50,0.15);  color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
+        .rank-pos-badge.plain  { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid #222; }
+        .model-name-cell {
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        .model-name-cell .winner-star { color: var(--accent-color); margin-left: 0.2rem; }
         .type-badge {
             padding: 0.15rem 0.4rem;
             border-radius: 3px;
@@ -455,20 +470,20 @@
                 if (isWinner) tr.className = 'winner';
                 if (rank <= 3) tr.classList.add(rankClasses[rank-1]);
 
-                let posHtml;
+                let badgeHtml;
                 if (rank === 1) {
-                    posHtml = `<span class="rank-pos gold">${medals[0]} 1</span>`;
+                    badgeHtml = `<span class="rank-pos-badge gold">${medals[0]}</span>`;
                 } else if (rank === 2) {
-                    posHtml = `<span class="rank-pos silver">${medals[1]} 2</span>`;
+                    badgeHtml = `<span class="rank-pos-badge silver">${medals[1]}</span>`;
                 } else if (rank === 3) {
-                    posHtml = `<span class="rank-pos bronze">${medals[2]} 3</span>`;
+                    badgeHtml = `<span class="rank-pos-badge bronze">${medals[2]}</span>`;
                 } else {
-                    posHtml = `<span style="color:var(--text-secondary)">${rank}</span>`;
+                    badgeHtml = `<span class="rank-pos-badge plain">${rank}</span>`;
                 }
 
                 tr.innerHTML = `
-                    <td>${posHtml}</td>
-                    <td>${m.name}${isWinner ? ' \u{1F3C6}' : ''}</td>
+                    <td>${badgeHtml}</td>
+                    <td><span class="model-name-cell">${m.name}${isWinner ? '<span class="winner-star">\u{1F3C6}</span>' : ''}</span></td>
                     <td><span class="type-badge ${typeCls}">${typeLabel}</span></td>
                     <td>
                         <span style="color:${r2Valid && m.r2 >= 0 ? 'var(--success)' : 'var(--danger)'}">
