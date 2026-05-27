@@ -309,30 +309,29 @@
                         {
                             label: 'Ibovespa',
                             data: ibovPoints,
-                            backgroundColor: 'rgba(0,255,65,0.5)',
-                            borderColor: 'rgba(0,255,65,0.9)',
-                            borderWidth: 1,
+                            pointBackgroundColor: 'rgba(0,255,65,0.5)',
+                            pointBorderColor: 'rgba(0,255,65,0.9)',
+                            pointBorderWidth: 1,
                             pointRadius: 5,
                             pointHoverRadius: 8
                         },
                         {
                             label: 'Small/Mid Caps',
                             data: smallPoints,
-                            backgroundColor: 'rgba(255,170,0,0.5)',
-                            borderColor: 'rgba(255,170,0,0.9)',
-                            borderWidth: 1,
+                            pointBackgroundColor: 'rgba(255,170,0,0.5)',
+                            pointBorderColor: 'rgba(255,170,0,0.9)',
+                            pointBorderWidth: 1,
                             pointRadius: 5,
                             pointHoverRadius: 8
                         },
                         selPoints.length > 0 ? {
-                            label: selCat === 'ibov' ? 'Selecionado' : 'Selecionado',
+                            label: 'Selecionado',
                             data: selPoints,
-                            backgroundColor: selCat === 'ibov' ? 'rgba(0,255,65,1)' : 'rgba(255,170,0,1)',
-                            borderColor: '#fff',
-                            borderWidth: 2,
+                            pointBackgroundColor: selCat === 'ibov' ? 'rgba(0,255,65,1)' : 'rgba(255,170,0,1)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
                             pointRadius: 12,
-                            pointHoverRadius: 12,
-                            pointBorderColor: '#fff'
+                            pointHoverRadius: 12
                         } : null
                     ].filter(Boolean)
                 },
